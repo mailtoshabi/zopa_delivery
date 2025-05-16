@@ -31,7 +31,7 @@
                             </div>
                             <div class="col-md-6 text-end">
                                 <a href="{{ route('admin.meals.create') }}" class="btn btn-primary">
-                                    <i class="mdi mdi-plus"></i> Add Meal
+                                    <i class="mdi mdi-plus"></i> Add A Meal
                                 </a>
                             </div>
                         </div>
