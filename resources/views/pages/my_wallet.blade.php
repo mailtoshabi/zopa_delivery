@@ -16,7 +16,7 @@
         <div class="col-sm-12 mb-3">
             <div class="card shadow">
                 <div class="card-header bg-light">
-                    <h4 class="mb-3">Meal Wallets</h4>
+                    <h4 class="mb-3">Meal Wallet</h4>
                 </div>
                 <div class="card-body">
                     <small class="text-muted d-block mt-1 mb-3">
