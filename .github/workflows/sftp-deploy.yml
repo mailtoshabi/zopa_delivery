@@ -20,5 +20,5 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           port: 22  # usually 22 for SFTP
           source: "./"  # upload all repo files
-          target: "/home/zopa/public_html/zopa"  # your remote directory, change accordingly
+          target: "/public_html/zopa"  # your remote directory, change accordingly
           rm: true  # optional: remove remote files before upload to avoid stale files
