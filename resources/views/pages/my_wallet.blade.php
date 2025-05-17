@@ -5,7 +5,7 @@
 <div class="container my-2">
     <div class="text-center mb-4">
         <h2 class="position-relative d-inline-block px-4 py-2">
-            My Walletss
+            My Wallet
         </h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
@@ -16,7 +16,7 @@
         <div class="col-sm-12 mb-3">
             <div class="card shadow">
                 <div class="card-header bg-light">
-                    <h4 class="mb-3">Meal Wallet</h4>
+                    <h4 class="mb-3">Meal Wallets</h4>
                 </div>
                 <div class="card-body">
                     <small class="text-muted d-block mt-1 mb-3">
