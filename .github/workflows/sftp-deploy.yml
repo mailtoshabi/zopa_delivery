@@ -3,7 +3,7 @@ name: SFTP Deploy
 on:
   push:
     branches:
-      - main  # change if needed
+      - main
 
 jobs:
   deploy:
@@ -18,7 +18,11 @@ jobs:
           host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
-          port: 22  # usually 22 for SFTP
-          source: "./"  # upload all repo files
-          target: "/public_html/zopa"  # your remote directory, change accordingly
-          rm: true  # optional: remove remote files before upload to avoid stale files
+          port: 22
+          source: "."  # use "." instead of "./" for better compatibility
+          target: "/home/zopa/public_html/zopa"
+          rm: false  # safer; set to true only if you're sure
+          timeout: 60s  # default is 30s; increase if needed
+          command_timeout: 60s  # avoid timeout on large files
+          strip_components: 0  # prevent flattening
+          debug: true  # enables verbose output for troubleshooting
