@@ -5,7 +5,7 @@
 <div class="container my-2">
     <div class="text-center mb-4">
         <h2 class="position-relative d-inline-block px-4 py-2">
-            My Wallets
+            My Walletss
         </h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
