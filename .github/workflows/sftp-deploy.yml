@@ -3,23 +3,22 @@ name: SFTP Deploy
 on:
   push:
     branches:
-      - main   # or your branch name
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Upload files via SFTP
-        uses: appleboy/sftp-action@v0.1.6
+        uses: appleboy/scp-action@v0.1.11
         with:
           host: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           port: 22
-          source: "./"                     # Upload everything in repo root
-          target: "/home/zopa/public_html/zopa"  # Change to your web root folder
-          rm: true                        # Remove files on remote before upload (optional)
+          source: "./"
+          target: "/home/zopa/public_html/zopa"
+          rm: true
