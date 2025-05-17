@@ -5,7 +5,7 @@
 <div class="container my-2">
     <div class="text-center mb-4">
         <h2 class="position-relative d-inline-block px-4 py-2">
-            My Wallet
+            My Wallets
         </h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
@@ -16,12 +16,12 @@
         <div class="col-sm-12 mb-3">
             <div class="card shadow">
                 <div class="card-header bg-light">
-                    <h4 class="mb-3">Meal Wallets</h4>
+                    <h4 class="mb-3">Meal Wallet</h4>
                 </div>
                 <div class="card-body">
                     <small class="text-muted d-block mt-1 mb-3">
                         If you have meal balance, Daily Meal gets auto-delivered — no need to set a reminder or do anything.<br>
-                        Just mark leave if you want to skip a day. Sundays are off!
+                        Just mark leave if you want to skip a day. Sundays are already off!
                     </small>
                     <div class="row d-flex align-items-center" style="width: 100%;">
                         <div class="col-sm-12 col-md-6 mb-3 mb-md-0">
