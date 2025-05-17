@@ -1,4 +1,4 @@
-name: Deploy via Rsync
+name: SFTP Deploy
 
 on:
   push:
@@ -8,17 +8,17 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy files with rsync
-        uses: burnett01/rsync-deployments@v7.0.2
+      - name: Upload files via SFTP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          switches: -avz --delete
-          path: ./
-          remote_path: /home/zopa/public_html/zopa
-          remote_host: ${{ secrets.SFTP_HOST }}
-          remote_user: ${{ secrets.SFTP_USERNAME }}
-          remote_key: ${{ secrets.SFTP_PASSWORD }} # SSH private key (add to your repo secrets)
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: 22
+          source: "./"
+          target: "/home/zopa/public_html/zopa"
+          rm: true
