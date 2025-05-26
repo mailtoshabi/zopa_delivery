@@ -442,44 +442,45 @@
                 input.value = user.uid;
                 document.getElementById('registerForm').appendChild(input);
 
+                 // If valid, disable button and show "Progress..."
+                submitButton.prop('disabled', true).text('Progress...');
+
+                // Submit form via AJAX
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: form.serialize(),
+                    success: function(response) {
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            alert('Registration successful!');
+                            window.location.reload();
+                        }
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 422) {
+                            let errors = xhr.responseJSON.errors;
+                            let errorList = '<ul class="mb-0">';
+                            $.each(errors, function(key, messages) {
+                                errorList += '<li>' + messages[0] + '</li>';
+                                form.find(`[name="${key}"]`).addClass('invalid');
+                            });
+                            errorList += '</ul>';
+                            form.prepend('<div class="alert alert-danger">' + errorList + '</div>');
+                        } else {
+                            alert('An unexpected error occurred. Please try again.');
+                        }
+                    },
+                    complete: function() {
+                        submitButton.prop('disabled', false).text('Signup');
+                    }
+                });
+
             }).catch(function (error) {
                 alert("Invalid OTP: " + error.message);
             });
 
-            // If valid, disable button and show "Progress..."
-            submitButton.prop('disabled', true).text('Progress...');
-
-            // Submit form via AJAX
-            $.ajax({
-                url: form.attr('action'),
-                method: 'POST',
-                data: form.serialize(),
-                success: function(response) {
-                    if (response.redirect_url) {
-                        window.location.href = response.redirect_url;
-                    } else {
-                        alert('Registration successful!');
-                        window.location.reload();
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.status === 422) {
-                        let errors = xhr.responseJSON.errors;
-                        let errorList = '<ul class="mb-0">';
-                        $.each(errors, function(key, messages) {
-                            errorList += '<li>' + messages[0] + '</li>';
-                            form.find(`[name="${key}"]`).addClass('invalid');
-                        });
-                        errorList += '</ul>';
-                        form.prepend('<div class="alert alert-danger">' + errorList + '</div>');
-                    } else {
-                        alert('An unexpected error occurred. Please try again.');
-                    }
-                },
-                complete: function() {
-                    submitButton.prop('disabled', false).text('Signup');
-                }
-            });
         });
     });
 </script>

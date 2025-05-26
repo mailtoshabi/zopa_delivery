@@ -48,7 +48,7 @@ class LoginController extends Controller
 
         if (!$customer || !$customer->status || !$customer->is_approved) {
             throw ValidationException::withMessages([
-                'phone' => ['Your account is not approved or is inactive.'],
+                'phone' => ['Invalid or inactive account.'],
             ]);
         }
 
@@ -68,6 +68,29 @@ class LoginController extends Controller
         throw ValidationException::withMessages([
             'phone' => ['The provided credentials are incorrect.'],
         ]);
+    }
+
+    public function showOtpLoginForm()
+    {
+        $firebaseConfig = config('services.firebase');
+        return view('pages.login_otp',compact('firebaseConfig'));
+    }
+
+    public function verifyOtpLogin(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|digits:10',
+        ]);
+
+        $customer = Customer::where('phone', $request->phone)->first();
+
+        if (!$customer || !$customer->status || !$customer->is_approved) {
+            return response()->json(['error' => 'Invalid or inactive account'], 403);
+        }
+
+        Auth::guard('customer')->login($customer);
+        $redirectUrl = $this->redirectTo();
+        return response()->json(['redirect_url' => $redirectUrl]);
     }
 
     public function logout(Request $request)

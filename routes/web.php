@@ -86,6 +86,8 @@ Route::post('/get-districts', [FrontHomeController::class, 'getDistrictList'])->
     Route::prefix('customer')->name('customer.')->group(function () {
         Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
         Route::post('login', [LoginController::class, 'login'])->name('login.submit');
+        Route::get('/login/otp', [LoginController::class, 'showOtpLoginForm'])->name('front.login.otp');
+        Route::post('/login/otp/verify', [LoginController::class, 'verifyOtpLogin'])->name('front.login.otp.verify');
 
     });
 // });

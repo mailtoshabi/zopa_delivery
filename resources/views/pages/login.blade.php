@@ -24,6 +24,7 @@
                 <div class="mb-3 position-relative">
                     <input type="password" class="form-control" name="password" id="password" placeholder="Password" value="">
                     <i class="fa fa-lock input-icon"></i>
+                    <a href="{{ route('customer.front.login.otp') }}" class="text-decoration-none"><small>Forgot password? Login via OTP</small></a>
                 </div>
 
                 <div class="mb-3 form-check">
