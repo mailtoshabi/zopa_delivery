@@ -7,23 +7,37 @@ use App\Http\Utilities\Utility;
 use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\MealWallet;
+use App\Providers\RouteServiceProvider;
+use App\Services\TwilioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+use Kreait\Firebase\Auth as FirebaseAuth;
+use Kreait\Firebase\Exception\Auth\FailedToVerifyToken;
+
 class RegisterController extends Controller
 {
     /**
      * Show the registration form.
      */
-    public function showRegistrationForm()
+
+     protected function redirectTo()
     {
-        $kitchens = Kitchen::select('id', 'name')->get();
-        $states = DB::table('states')->orderBy('name', 'asc')->select('id', 'name')->get();
-        return view('pages.register',compact('kitchens','states'));
+        return route(RouteServiceProvider::HOME);
     }
+
+    public function showRegistrationForm()
+{
+    $kitchens = Kitchen::select('id', 'name')->get();
+    $states = DB::table('states')->orderBy('name', 'asc')->select('id', 'name')->get();
+    $firebaseConfig = config('services.firebase');
+
+    return view('pages.register', compact('kitchens', 'states', 'firebaseConfig'));
+}
+
 
     /**
      * Handle customer registration and meal meal_wallet creation.
@@ -69,6 +83,9 @@ class RegisterController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
+        $otp = rand(100000, 999999);
+        $expiresAt = now()->addMinutes(Utility::OTP_EXPIRY_MINUTE);
+
         $customer = Customer::create([
             'name' => $request->name,
             'phone' => $request->phone,
@@ -84,6 +101,8 @@ class RegisterController extends Controller
             'kitchen_id' => decrypt($request->kitchen_id),
             'status' => Utility::ITEM_ACTIVE,
             'is_approved' => 0,
+            'otp_code' => $otp,
+            'otp_expires_at' => $expiresAt,
         ]);
 
         MealWallet::create([
@@ -93,15 +112,23 @@ class RegisterController extends Controller
         ]);
 
         // Log in the customer
-        Auth::login($customer);
+        // Auth::login($customer);
 
         // Check if approved and active
         if ($customer->is_approved && $customer->status == Utility::ITEM_ACTIVE) {
             $redirectUrl = route('front.meal.plan'); // adjust this route name to your dashboard
             $successMessage = 'Registration successful! Welcome to your dashboard.';
         } else {
-            Auth::logout();
-            $redirectUrl = route('customer.login');
+
+            // Store phone or customer ID in session for OTP verification
+            session(['otp_customer_id' => $customer->id]);
+            // Auth::logout();
+
+            // Send OTP
+            $twilio = new TwilioService();
+            $twilio->sendSms(Utility::COUNTRY_CODE.$customer->phone, "Your Zopa OTP is {$otp}");
+
+            $redirectUrl = route('verify.otp.form');
             $successMessage = 'Registration successful. Our Support Team will contact you soon and activate your account!';
         }
 
@@ -114,4 +141,104 @@ class RegisterController extends Controller
 
         return redirect($redirectUrl)->with('success', $successMessage);
     }
+
+    public function showOtpForm()
+    {
+        $customerId = session('otp_customer_id');
+
+        if (!$customerId) {
+            return redirect()->route('front.register')->with('error', 'Session expired. Please register again.');
+        }
+
+        if (Auth::guard('customer')->check()) {
+            return redirect()->intended($this->redirectTo());
+        }
+
+        $customer = Customer::find($customerId);
+
+        return view('pages.verify_otp', compact('customer'));
+    }
+
+
+    // // verifyOtp for Twilio
+    // public function verifyOtp(Request $request)
+    // {
+    //     $customerId = session('otp_customer_id');
+
+    //     if (!$customerId) {
+    //         return response()->json([
+    //             'errors' => ['otp' => ['Session expired. Please register again.']],
+    //         ], 422);
+    //     }
+
+    //     $customer = Customer::find($customerId);
+
+    //     if (
+    //         !$customer ||
+    //         $customer->otp_code !== $request->otp ||
+    //         now()->gt($customer->otp_expires_at)
+    //     ) {
+    //         return response()->json([
+    //             'errors' => ['otp' => ['Invalid or expired OTP']],
+    //         ], 422);
+    //     }
+
+    //     // Mark as verified
+    //     $customer->is_approved = Utility::ITEM_ACTIVE;
+    //     $customer->otp_code = null;
+    //     $customer->otp_expires_at = null;
+    //     $customer->save();
+
+    //     // Login the customer
+    //     Auth::guard('customer')->login($customer);
+
+    //     // Clear session key
+    //     session()->forget('otp_customer_id');
+
+    //     // ✅ Return JSON for AJAX redirect
+    //     return response()->json([
+    //         'message' => 'OTP verified successfully.',
+    //         'redirect_url' => route('front.registration.success'),
+    //     ]);
+    // }
+
+    public function verifyOtp(Request $request, FirebaseAuth $firebaseAuth)
+    {
+        $request->validate([
+            'firebase_token' => 'required|string',
+        ]);
+
+        try {
+            $verifiedIdToken = $firebaseAuth->verifyIdToken($request->firebase_token);
+            $phoneNumber = $verifiedIdToken->claims()->get('phone_number');
+
+            if (!$phoneNumber) {
+                return response()->json(['errors' => ['otp' => ['Phone number not found in token.']]], 422);
+            }
+
+            // Strip country code (optional, depending on how you store it)
+            $strippedPhone = ltrim($phoneNumber, '+91'); // Adjust as needed
+
+            $customer = Customer::where('phone', $strippedPhone)->first();
+
+            if (!$customer) {
+                return response()->json(['errors' => ['otp' => ['Customer not found. Please register.']]], 422);
+            }
+
+            if (!$customer->is_approved) {
+                return response()->json(['errors' => ['otp' => ['Your account is not yet approved.']]], 422);
+            }
+
+            if (!$customer->status) {
+                return response()->json(['errors' => ['otp' => ['Your account has been disabled.']]], 422);
+            }
+
+            Auth::guard('customer')->login($customer);
+
+            return response()->json(['redirect_url' => route('customer.daily_orders')]);
+        } catch (FailedToVerifyToken $e) {
+            return response()->json(['errors' => ['otp' => ['Invalid or expired Firebase token.']]], 422);
+        }
+    }
+
 }

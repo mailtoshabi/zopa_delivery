@@ -5,7 +5,7 @@
     <div class="card shadow" style="width: 100%; max-width: 400px;">
         <div class="card-body">
             <div class="text-center mb-4 logo_bg pb-4 pt-4">
-                <img src="<?php echo e(asset('front/images/logo.png')); ?>" alt="Zopa Food Drop" style="height: 100px; max-width: 100%;">
+                <a href="<?php echo e(route('index')); ?>"><img src="<?php echo e(asset('front/images/logo.png')); ?>" alt="Zopa Food Drop" style="height: 100px; max-width: 100%;"></a>
             </div>
             <h4 class="card-title text-center mb-4">Login</h4>
 
@@ -33,7 +33,8 @@
             </form>
 
             <div class="text-center mt-3">
-                <small>Don't have an account? <a href="<?php echo e(route('front.register')); ?>">Register</a></small>
+                <small>Don't have an account? <a href="<?php echo e(route('front.register')); ?>">Register</a></small><br>
+                <small>Back to the <a href="<?php echo e(route('index')); ?>">Home Page </a></small>
             </div>
         </div>
     </div>

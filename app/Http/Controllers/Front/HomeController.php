@@ -26,6 +26,9 @@ use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+use Razorpay\Api\Api;
+use Illuminate\Support\Facades\Session;
+
 class HomeController extends Controller
 {
     /**
@@ -60,7 +63,7 @@ class HomeController extends Controller
         return $data;
     }
 
-    public function mealPlan()
+    public function showMealPlans()
     {
         $meals = Meal::with(['ingredients', 'remarks'])
                 ->where('status', Utility::ITEM_ACTIVE)
@@ -70,7 +73,7 @@ class HomeController extends Controller
         return view('pages.meal_plan', compact('meals'));
     }
 
-    public function singleMeal()
+    public function showSingleMeal()
     {
         $meal = Meal::with(['ingredients', 'remarks'])
                 ->where('status', Utility::ITEM_ACTIVE)
@@ -80,7 +83,7 @@ class HomeController extends Controller
         return view('pages.single_meal', compact('meal'));
     }
 
-    public function showPurchasePage($encryptedMealId)
+    public function showMealPurchasePage($encryptedMealId)
     {
         try {
             $mealId = Crypt::decrypt($encryptedMealId);
@@ -94,14 +97,126 @@ class HomeController extends Controller
         }
     }
 
-    public function addons()
+    public function purchaseMeal(Request $request, $meal_id)
+    {
+        $invoiceNo = $this->generateInvoiceNumber();
+        $meal = Meal::findOrFail(decrypt($meal_id));
+
+        $validated = $request->validate([
+            'addons' => 'nullable|array',
+            'addons.*.quantity' => 'nullable|integer|min:1',
+            'pay_method' => 'required|in:1,2',  // 1 = Online, 2 = Cash on Delivery
+        ]);
+
+        $customer = Auth::guard('customer')->user();
+        $payMethod = $validated['pay_method'];
+
+        // $grandTotal = 0;
+
+        // Create the parent order
+        $customerOrder = CustomerOrder::create([
+            'invoice_no' => $invoiceNo,
+            'customer_id' => $customer->id,
+            'pay_method' => $payMethod,
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'amount' => 0, // temporary, will update later
+            'ip_address' => $request->ip(),
+            'is_paid' => 0,
+            'status' => 1,
+        ]);
+
+        // Attach the meal
+        $customerOrder->meals()->create([
+            'meal_id' => $meal->id,
+            'price' => $meal->price,
+            'quantity' => $meal->quantity,
+        ]);
+
+        // Attach addons if provided
+        if (!empty($validated['addons'])) {
+            $addonIds = array_keys($validated['addons']);
+            $addons = Addon::whereIn('id', $addonIds)->get()->keyBy('id');
+
+            foreach ($validated['addons'] as $addonId => $addonData) {
+                if (!isset($addons[$addonId])) continue;
+
+                $customerOrder->addons()->create([
+                    'addon_id' => $addonId,
+                    'quantity' => $addonData['quantity'],
+                    'price' => $addons[$addonId]->price,
+                ]);
+            }
+        }
+
+        $grandTotal = $customerOrder->calculateTotal();
+
+        // Update total amount
+        $customerOrder->update(['amount' => $grandTotal]);
+
+        // Razorpay payment
+        if ($payMethod == Utility::PAYMENT_ONLINE) {
+            $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
+
+            $razorpayOrder = $api->order->create([
+                'receipt' => $invoiceNo,
+                'amount' => $grandTotal * 100,
+                'currency' => 'INR',
+                'payment_capture' => 1,
+                'notes'           => [
+                    'invoice_no' => $customerOrder->invoice_no,
+                    'customer_name' => $customerOrder->customer->name,
+                ]
+            ]);
+
+            // Save Razorpay order ID in DB
+            $customerOrder->update([
+                'razorpay_order_id' => $razorpayOrder['id']
+            ]);
+
+            // Also store in session (optional)
+            Session::put('razorpay_order_id', $razorpayOrder['id']);
+            Session::put('customer_order_id', $customerOrder->id);
+
+            return view('pages.razorpay_payment', [
+                'order' => $razorpayOrder,
+                'customer' => $customer,
+                'razorpayKey' => config('services.razorpay.key'),
+                'grandTotal' => $grandTotal,
+            ]);
+        }
+
+        return redirect()->route('meal.payment.success', encrypt($customerOrder->id));
+    }
+
+    public function showMealPaymentSuccess($orderId)
+    {
+        $orderId=decrypt($orderId);
+        $customer = Auth::guard('customer')->user();
+        $customerOrder = CustomerOrder::where('id', $orderId)
+            ->where('customer_id', $customer->id)
+            ->firstOrFail();
+
+        // Load meals attached to the order
+        $mealsPivot = $customerOrder->meals()->with('meal')->get();
+        $addonsPivot = $customerOrder->addons()->with('addon')->get();
+
+        return view('pages.payment_success', [
+            'customerOrder' => $customerOrder,
+            'meals' => $mealsPivot,
+            'addons' => $addonsPivot,
+            'payment_method' => $customerOrder->pay_method,
+        ]);
+    }
+
+    public function showAddons()
     {
         $addons = Addon::where('status', Utility::ITEM_ACTIVE)->get();
 
         return view('pages.buy_addons', compact('addons'));
     }
 
-    public function purchaseAddon(Request $request)
+    public function showAddonPurchasePage(Request $request)
     {
         $validated = $request->validate([
             'addons' => 'required|array',
@@ -152,7 +267,7 @@ class HomeController extends Controller
         abort(400); // Should not reach here
     }
 
-    public function storeAddonPurchase(Request $request)
+    public function addonPurchase(Request $request)
     {
 
         $invoiceNo = $this->generateInvoiceNumber();
@@ -184,6 +299,8 @@ class HomeController extends Controller
             'pay_method' => $payMethod,
             'discount' => 0,              // No discount for single meal (adjust if needed)
             'delivery_charge' => 0,       // No delivery charge (adjust if needed)
+            'amount' => 0, // temporary, will update later
+            'ip_address' => $request->ip(),
             'is_paid' => 0,               // Not paid yet
             'status' => 0,                // Active
         ]);
@@ -200,15 +317,41 @@ class HomeController extends Controller
             ]);
         }
 
+        $grandTotal = $customerOrder->calculateTotal();
+
+        // Update total amount
+        $customerOrder->update(['amount' => $grandTotal]);
+
+        // Razorpay payment
         if ($payMethod == Utility::PAYMENT_ONLINE) {
-            // 1️⃣ Activate and mark paid
-            $customerOrder->update([
-                'status' => Utility::ITEM_ACTIVE,
-                'is_paid' => Utility::ITEM_ACTIVE,
+            $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
+
+            $razorpayOrder = $api->order->create([
+                'receipt' => $invoiceNo,
+                'amount' => $grandTotal * 100,
+                'currency' => 'INR',
+                'payment_capture' => 1,
+                'notes'           => [
+                    'invoice_no' => $customerOrder->invoice_no,
+                    'customer_name' => $customerOrder->customer->name,
+                ]
             ]);
 
-            // 3️⃣ Process Addons → AddonWallet (only if addons exist)
-            $this->processAddons($customerOrder);
+            // Save Razorpay order ID in DB
+            $customerOrder->update([
+                'razorpay_order_id' => $razorpayOrder['id']
+            ]);
+
+            // Also store in session (optional)
+            Session::put('razorpay_order_id', $razorpayOrder['id']);
+            Session::put('customer_order_id', $customerOrder->id);
+
+            return view('pages.razorpay_payment', [
+                'order' => $razorpayOrder,
+                'customer' => $customer,
+                'razorpayKey' => config('services.razorpay.key'),
+                'grandTotal' => $grandTotal,
+            ]);
         }
 
         // Show confirmation
@@ -264,143 +407,6 @@ class HomeController extends Controller
         return $invoice;
     }
 
-    public function purchaseMeal(Request $request, $meal_id)
-    {
-        $invoiceNo = $this->generateInvoiceNumber();
-        $meal = Meal::findOrFail(decrypt($meal_id));
-
-        // Validate the incoming request data
-        $validated = $request->validate([
-            'addons' => 'nullable|array',
-            'addons.*.quantity' => 'nullable|integer|min:1',
-            'pay_method' => 'required|in:1,2',  // 1 = Online, 2 = Cash on Delivery
-        ]);
-
-        $customer = Auth::guard('customer')->user();
-        $payMethod = $validated['pay_method'];
-
-        // Step 1. Create CustomerOrder (the parent order)
-        $customerOrder = CustomerOrder::create([
-            'invoice_no' => $invoiceNo,
-            'customer_id' => $customer->id,
-            'pay_method' => $payMethod,
-            'discount' => 0,              // No discount for single meal (adjust if needed)
-            'delivery_charge' => 0,       // No delivery charge (adjust if needed)
-            'is_paid' => 0,               // Not paid yet
-            'status' => 0,                // Active
-        ]);
-
-        // return $customerOrder;
-
-        // Step 2. Attach the meal into customer_meal (under the created order)
-        $customerOrder->meals()->create([
-            'meal_id' => $meal->id,
-            'price' => $meal->price,      // Current meal price
-            'quantity' => $meal->quantity, // Quantity from meal table (adjust if user chooses quantity)
-        ]);
-
-
-        // (Optional) Step 3: Update meal_wallet if you want to auto credit meals
-        // Commented, but safe to enable later as per your logic.
-        // $meal_wallet = MealWallet::firstOrNew(['customer_id' => $customer->id]);
-        // $meal_wallet->quantity += $meal->quantity;
-        // $meal_wallet->status = Utility::ITEM_ACTIVE;
-        // $meal_wallet->save();
-
-        if($request->addons) {
-        $addonIds = array_keys($validated['addons']);
-        $addons = Addon::whereIn('id', $addonIds)->get()->keyBy('id');
-        if ($addons->isNotEmpty()) {
-            foreach ($validated['addons'] as $addonId => $addonData) {
-                if (!isset($addons[$addonId])) {
-                    continue;
-                }
-                // Step 2. Attach the addons into customer_addon (under the created order)
-                $customerOrder->addons()->create([
-                    'addon_id' => $addonId,
-                    'quantity' => $addonData['quantity'],
-                    'price' => $addons[$addonId]->price,
-                ]);
-            }
-        }
-    }
-
-    if ($payMethod == Utility::PAYMENT_ONLINE) {
-        // 1️⃣ Activate and mark paid
-        $customerOrder->update([
-            'status' => Utility::ITEM_ACTIVE,
-            'is_paid' => Utility::ITEM_ACTIVE,
-        ]);
-
-        // 2️⃣ Process Meals → MealWallet (only if meals exist)
-        $this->processMeals($customerOrder);
-
-        // 3️⃣ Process Addons → AddonWallet (only if addons exist)
-        $this->processAddons($customerOrder);
-    }
-
-        return redirect()->route('meal.payment.success', encrypt($customerOrder->id));
-    }
-
-    private function processMeals(CustomerOrder $customer_order)
-    {
-        if ($customer_order->meals && $customer_order->meals->isNotEmpty()) {
-            // Directly sum the quantity column of CustomerMeal models
-            $total_meal_quantity = $customer_order->meals->sum('quantity');
-
-            if ($total_meal_quantity > 0) {
-                $meal_wallet = MealWallet::firstOrNew(['customer_id' => $customer_order->customer_id]);
-
-                $meal_wallet->quantity = ($meal_wallet->quantity ?? 0) + $total_meal_quantity;
-                $meal_wallet->status = Utility::ITEM_ACTIVE;
-                $meal_wallet->save();
-            }
-        }
-    }
-
-    private function processAddons(CustomerOrder $customer_order)
-    {
-        if ($customer_order->addons && $customer_order->addons->isNotEmpty()) {
-            foreach ($customer_order->addons as $addonItem) {
-                $addon_id = $addonItem->addon_id;
-                $quantity = $addonItem->quantity;
-
-                if ($quantity > 0) {
-                    $addon_wallet = AddonWallet::firstOrNew([
-                        'customer_id' => $customer_order->customer_id,
-                        'addon_id' => $addon_id,
-                    ]);
-
-                    // Simplified wallet quantity update
-                    $addon_wallet->quantity = ($addon_wallet->quantity ?? 0) + $quantity;
-                    $addon_wallet->status = Utility::ITEM_ACTIVE;
-                    $addon_wallet->save();
-                }
-            }
-        }
-    }
-
-    public function showMealPaymentSuccess($orderId)
-    {
-        $orderId=decrypt($orderId);
-        $customer = Auth::guard('customer')->user();
-        $customerOrder = CustomerOrder::where('id', $orderId)
-            ->where('customer_id', $customer->id)
-            ->firstOrFail();
-
-        // Load meals attached to the order
-        $mealsPivot = $customerOrder->meals()->with('meal')->get();
-        $addonsPivot = $customerOrder->addons()->with('addon')->get();
-
-        return view('pages.payment_success', [
-            'customerOrder' => $customerOrder,
-            'meals' => $mealsPivot,
-            'addons' => $addonsPivot,
-            'payment_method' => $customerOrder->pay_method,
-        ]);
-    }
-
-
     public function myPurchases(Request $request)
     {
         $customer = auth('customer')->user();
@@ -426,7 +432,7 @@ class HomeController extends Controller
 
         // Addon Wallet — fetch addon_wallet records where status is active
         $addon_wallet = AddonWallet::where('customer_id', $customerId)
-                        ->where('status', Utility::ITEM_ACTIVE)
+                        // ->where('status', Utility::ITEM_ACTIVE)
                         ->where('quantity', '>', 0)
                         ->with('addon') // eager load addon details (name, price, image)
                         ->get();
@@ -456,7 +462,7 @@ class HomeController extends Controller
 
         $maxActiveLeaves = Utility::MAX_ACTIVE_LEAVES;
 
-        return view('pages.my_wallet', compact('mealsLeft', 'addon_wallet', 'monthlyLeaveCount', 'maxLeaves','activeLeaveCount','maxActiveLeaves'));
+        return view('pages.my_wallet', compact('mealsLeft', 'meal_wallet', 'addon_wallet', 'monthlyLeaveCount', 'maxLeaves','activeLeaveCount','maxActiveLeaves'));
     }
 
 
@@ -508,6 +514,7 @@ class HomeController extends Controller
         $cutoffTime = now()->setTime($this->cutoffHour, $this->cutoffMinute);
         $todayOrders = DailyMeal::with('dailyAddons.addon')
             ->where('customer_id', $customerId)
+            ->where('status', Utility::ITEM_ACTIVE)
             ->whereDate('date', $today)
             ->orderBy('id','desc')
             ->get();

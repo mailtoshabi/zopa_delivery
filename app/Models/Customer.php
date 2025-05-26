@@ -26,6 +26,7 @@ class Customer extends Authenticatable
     protected $casts = [
         'status' => 'boolean',
         'is_approved' => 'boolean',
+        'datetime' => 'date',
     ];
 
     protected $fillable = [
@@ -45,6 +46,8 @@ class Customer extends Authenticatable
         'kitchen_id',
         'status',
         'is_approved',
+        'otp_code',
+        'otp_expires_at',
         'user_id',
     ];
 

@@ -1,12 +1,12 @@
 @extends('admin.layouts.master')
 
-@section('title') Feedbacks @endsection
+@section('title') @lang('translation.Feedbacks') @endsection
 
 @section('content')
 @component('admin.dir_components.breadcrumb')
-    @slot('li_1') Feedback Manage @endslot
+    @slot('li_1') @lang('translation.Customer_Manage') @endslot
     @slot('li_2') @lang('translation.Customer_Manage') @endslot
-    @slot('title') Feedbacks @endslot
+    @slot('title') @lang('translation.Feedbacks') @endslot
 @endcomponent
 
 @if(session()->has('success'))
@@ -29,7 +29,6 @@
                         <th>Reply</th>
                         <th>Public?</th>
                         <th>Submitted At</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,9 +62,6 @@
                             </span>
                         </td>
                         <td>{{ $feedback->created_at->format('d M Y') }}</td>
-                        <td>
-                            <a href="{{ route('admin.customers.show', encrypt($feedback->customer_id)) }}" class="btn btn-sm btn-info">View Customer</a>
-                        </td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -89,7 +85,7 @@
                 const formData = new FormData(this);
                 const csrfToken = formData.get('_token');
 
-                fetch(`/admin/customers/feedbacks/${feedbackId}/reply-ajax`, {
+                fetch(`/admin/feedbacks/${feedbackId}/reply-ajax`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,

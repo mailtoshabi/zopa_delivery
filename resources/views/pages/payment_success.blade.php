@@ -60,7 +60,6 @@
                         <ul class="list-group">
                             <li class="list-group-item"><strong>Invoice No:</strong> {{ $customerOrder->invoice_no }}</li>
 
-                            @php $grandTotal = 0; @endphp
                             @if($meals->isNotEmpty())
                                 @foreach($meals as $mealPivot)
                                     @php
@@ -69,7 +68,6 @@
                                         $price = $mealPivot->price;
                                         // $subtotal = $price * $quantity;
                                         $subtotal = $price;
-                                        $grandTotal += $subtotal;
                                     @endphp
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         {{ $name }} x 1
@@ -82,7 +80,6 @@
                                 @foreach ($addons as $addonsPivot)
                                     @php
                                         $subtotal = $addonsPivot->price * $addonsPivot->quantity;
-                                        $grandTotal += $subtotal;
                                     @endphp
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         {{ $addonsPivot->addon->name }} x {{ $addonsPivot->quantity }}
@@ -93,7 +90,7 @@
 
                             <li class="list-group-item d-flex justify-content-between align-items-center fw-bold">
                                 Grand Total
-                                <span>₹{{ number_format($grandTotal, 2) }}</span>
+                                <span>₹{{ number_format($customerOrder->amount, 2) }}</span>
                             </li>
                         </ul>
                     @endif

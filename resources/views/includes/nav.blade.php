@@ -1,16 +1,25 @@
 @php
     $customer = Auth::guard('customer')->user();
-    $walletCount = $customer->mealWallet->quantity ?? 0;
 
-    $mealCart = session('meal_cart', []);
-    $addonCart = session('addon_cart', []);
-    $mealCount = collect($mealCart)->sum('quantity');
-    $addonCount = collect($addonCart)->sum('quantity');
-    $totalCartCount = $mealCount + $addonCount;
+    $walletCount = 0;
+    $mealCount = 0;
+    $addonCount = 0;
+    $totalCartCount = 0;
+    $profileImage = '';
 
-    $profileImage = $customer->image_filename
-        ? Storage::url(App\Models\Customer::DIR_PUBLIC . '/' . $customer->image_filename)
-        : 'https://ui-avatars.com/api/?name='.$customer->name.'&background=ec1d23&color=fff';
+    if ($customer) {
+        $walletCount = $customer->mealWallet->quantity ?? 0;
+
+        $mealCart = session('meal_cart', []);
+        $addonCart = session('addon_cart', []);
+        $mealCount = collect($mealCart)->sum('quantity');
+        $addonCount = collect($addonCart)->sum('quantity');
+        $totalCartCount = $mealCount + $addonCount;
+
+        $profileImage = $customer->image_filename
+            ? Storage::url(App\Models\Customer::DIR_PUBLIC . '/' . $customer->image_filename)
+            : 'https://ui-avatars.com/api/?name='.$customer->name.'&background=ec1d23&color=fff';
+    }
 @endphp
 
 <!-- Navigation Bar -->
@@ -33,51 +42,57 @@
                     <a class="nav-link dropdown-toggle" href="#" id="ordersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-concierge-bell"></i>&nbsp;&nbsp;Zopa Meals</a>
                     <ul class="dropdown-menu" aria-labelledby="ordersDropdown">
-                        <li><a class="dropdown-item" href="{{ route('my.wallet') }}"><i class="fa-solid fa-wallet"></i>&nbsp;&nbsp;Wallet</a></li>
+                        @if ($customer)<li><a class="dropdown-item" href="{{ route('my.wallet') }}"><i class="fa-solid fa-wallet"></i>&nbsp;&nbsp;Wallet</a></li>@endif
                         <li><a class="dropdown-item" href="{{ route('front.meal.plan') }}"><i class="fa-solid fa-receipt"></i>&nbsp;&nbsp;Buy A Plan</a></li>
                         <li><a class="dropdown-item" href="{{ route('front.meal.single') }}"><i class="fa-solid fa-shopping-basket"></i>&nbsp;&nbsp;Buy Single</a></li>
-                        <li><a class="dropdown-item" href="{{ route('front.addons') }}"><i class="fa-solid fa-plus-circle"></i>&nbsp;&nbsp;Buy Addons</a></li>
-                        <li><a class="dropdown-item extra-meal-btn" href="javascript:void(0);"><i class="fa-solid fa-plus"></i>&nbsp;&nbsp;Request Extra Meal</a></li>
+                        <li><a class="dropdown-item" href="{{ route('front.show.addons') }}"><i class="fa-solid fa-plus-circle"></i>&nbsp;&nbsp;Buy Addons</a></li>
+                        @if ($customer)<li><a class="dropdown-item extra-meal-btn" href="javascript:void(0);"><i class="fa-solid fa-plus"></i>&nbsp;&nbsp;Request Extra Meal</a></li>@endif
                     </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('feedbacks')}}"><i class="fa-solid fa-comments"></i> Feedbacks</a>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-user"></i> My Account
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
-                        <li class="dropdown-header fw-bold text-zopa pb-0">
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="{{ $profileImage }}" alt="Profile" class="rounded-circle" width="30" height="30">
-                                <div>
-                                    {{ $customer->name }}<br>
-                                    <small class="text-muted">{{ $customer->phone }}</small>
+                @if($customer)
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user"></i> My Account
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
+                            <li class="dropdown-header fw-bold text-zopa pb-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ $profileImage }}" alt="Profile" class="rounded-circle" width="30" height="30">
+                                    <div>
+                                        {{ $customer->name }}<br>
+                                        <small class="text-muted">{{ $customer->phone }}</small>
+                                    </div>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <li class="dropdown-header fw-bold text-dark pt-0">
-                            <small><a href="{{ route('my.wallet') }}" class="text-dark">My Wallet:
-                                @if($walletCount > 0)
-                                    {{-- <span class="badge bg-success"> --}}
-                                        {{ $walletCount }}
-                                    {{-- </span> --}}
-                                @endif</a>
-                            </small></li>
-                        <li><hr class="dropdown-divider mt-0 mb-0"></li>
-                        <li><a class="dropdown-item" href="{{ route('customer.leave.index')}}"><i class="fa-solid fa-calendar-xmark"></i>&nbsp;&nbsp;Leaves</a></li>
-                        <li><a class="dropdown-item" href="{{ route('customer.purchases')}}"><i class="fa-solid fa-receipt"></i>&nbsp;&nbsp;Purchases</a></li>
-                        <li><a class="dropdown-item" href="{{ route('customer.extra_meals')}}"><i class="fa-solid fa-plus"></i>&nbsp;&nbsp;Extra Meals</a></li>
-                        <li><a class="dropdown-item" href="{{ route('customer.profile') }}"><i class="fa-solid fa-user-pen"></i>&nbsp;&nbsp;Profile</a></li>
-                        <li>
-                            <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                <i class="fa-solid fa-right-from-bracket"></i>&nbsp;&nbsp;Logout
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                            <li class="dropdown-header fw-bold text-dark pt-0">
+                                <small><a href="{{ route('my.wallet') }}" class="text-dark">Meal Wallet:
+                                    {{-- @if($walletCount > 0) --}}
+                                            {{ $walletCount }}
+                                    {{-- @endif --}}
+                                </a>
+                                </small></li>
+                            <li><hr class="dropdown-divider mt-0 mb-0"></li>
+                            <li><a class="dropdown-item" href="{{ route('customer.leave.index')}}"><i class="fa-solid fa-calendar-xmark"></i>&nbsp;&nbsp;Leaves</a></li>
+                            <li><a class="dropdown-item" href="{{ route('customer.purchases')}}"><i class="fa-solid fa-receipt"></i>&nbsp;&nbsp;Purchases</a></li>
+                            <li><a class="dropdown-item" href="{{ route('customer.extra_meals')}}"><i class="fa-solid fa-plus"></i>&nbsp;&nbsp;Extra Meals</a></li>
+                            <li><a class="dropdown-item" href="{{ route('customer.profile') }}"><i class="fa-solid fa-user-pen"></i>&nbsp;&nbsp;Profile</a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="fa-solid fa-right-from-bracket"></i>&nbsp;&nbsp;Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
+                @if(!$customer)
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('customer.login')}}"><i class="fa-solid fa-user"></i> Signup/Login</a>
+                    </li>
+                @endif
                 {{-- <li class="nav-item">
                     <a class="nav-link" href="{{ route('cart.index') }}">
                         <i class="fa-solid fa-shopping-cart"></i>
@@ -96,18 +111,18 @@
 <!-- Mobile Menu -->
 <div class="mobile-menu" id="mobileMenu">
     <span class="close-btn" onclick="toggleMenu()">&times;</span>
-
+    @if ($customer)
     <div class="px-4 py-3 border-bottom">
         <div class="fw-bold text-zopa d-flex align-items-center gap-2">
-        <img src="{{ $profileImage }}" alt="Profile" class="rounded-circle" width="30" height="30">
-        <div>
-            {{ $customer->name }}<br>
-            <small class="text-muted">{{ $customer->phone }}</small>
+            <img src="{{ $profileImage }}" alt="Profile" class="rounded-circle" width="30" height="30">
+            <div>
+                {{ $customer->name }}<br>
+                <small class="text-muted">{{ $customer->phone }}</small>
+            </div>
         </div>
+        <div class="text-muted small"><a href="{{ route('my.wallet') }}" class="text-dark">My Wallet: {{ $walletCount }}</a></div>
     </div>
-    <div class="text-muted small"><a href="{{ route('my.wallet') }}" class="text-dark">My Wallet: {{ $walletCount }}</a></div>
-    </div>
-
+    @endif
     <ul>
         {{-- <li><a href="{{ route('cart.index') }}"><i class="fa-solid fa-shopping-cart"></i> Cart
             @php $cartCount = session('cart') ? count(session('cart')) : 0; @endphp
@@ -117,20 +132,25 @@
                 </span>
             @endif
         </a></li> --}}
+        @if ($customer)
         <li><a href="{{ route('customer.daily_meals') }}"><i class="fa-solid fa-utensils"></i> Daily Meals</a></li>
+        @endif
         <li>
             <a href="#" onclick="toggleSubmenu(event, 'zopaMealsSubmenu')">
                 <i class="fa-solid fa-concierge-bell"></i> Zopa Meals
                 <i class="fa-solid fa-chevron-down float-end"></i> {{-- DOWN ARROW --}}
             </a>
             <ul class="submenu" id="zopaMealsSubmenu">
+                @if ($customer)
                 <li><a href="{{ route('my.wallet') }}"><i class="fa-solid fa-wallet"></i> Wallet</a></li>
+                @endif
                 <li><a href="{{ route('front.meal.plan') }}"><i class="fa-solid fa-receipt"></i> Buy A Plan</a></li>
                 <li><a href="{{ route('front.meal.single') }}"><i class="fa-solid fa-shopping-basket"></i> Buy Single</a></li>
-                <li><a href="{{ route('front.addons') }}"><i class="fa-solid fa-plus-circle"></i> Buy Addons</a></li>
+                <li><a href="{{ route('front.show.addons') }}"><i class="fa-solid fa-plus-circle"></i> Buy Addons</a></li>
             </ul>
         </li>
         <li><a href="{{ route('feedbacks')}}"><i class="fa-solid fa-comments"></i> Feedbacks</a></li>
+        @if ($customer)
         <li>
             <a href="#" onclick="toggleSubmenu(event, 'zopaMealsSettings')">
                 <i class="fa-solid fa-user"></i> Account
@@ -148,6 +168,7 @@
                 <i class="fa-solid fa-right-from-bracket"></i> Logout
             </a>
         </li>
+        @endif
     </ul>
 </div>
 

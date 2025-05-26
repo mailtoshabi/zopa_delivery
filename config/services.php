@@ -30,4 +30,25 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+    ],
+
+    'razorpay' => [
+        'key'    => env('RAZORPAY_KEY'),
+        'secret' => env('RAZORPAY_SECRET'),
+    ],
+
+    'firebase' => [
+        'apiKey' => env('FIREBASE_API_KEY'),
+        'authDomain' => env('FIREBASE_AUTH_DOMAIN'),
+        'projectId' => env('FIREBASE_PROJECT_ID'),
+        'storageBucket' => env('FIREBASE_STORAGE_BUCKET'),
+        'messagingSenderId' => env('FIREBASE_MESSAGING_SENDER_ID'),
+        'appId' => env('FIREBASE_APP_ID'),
+    ],
+
+
 ];

@@ -17,7 +17,7 @@
     @if(empty($cart))
         <p>Your cart is empty.</p>
         <div class="mt-4">
-            <p>Why not check out our <a href="{{ route('front.meal.plan') }}">Meal Plans</a> or <a href="{{ route('front.addons') }}">Addons</a>?</p>
+            <p>Why not check out our <a href="{{ route('front.meal.plan') }}">Meal Plans</a> or <a href="{{ route('front.show.addons') }}">Addons</a>?</p>
         </div>
     @else
         <table class="table">
@@ -57,7 +57,7 @@
             <button class="btn btn-warning">Clear Cart</button>
         </form>
         <div class="mt-4">
-            <p>Continue buying with <a href="{{ route('front.meal.plan') }}">Meal Plans</a> or <a href="{{ route('front.addons') }}">Addons</a>?</p>
+            <p>Continue buying with <a href="{{ route('front.meal.plan') }}">Meal Plans</a> or <a href="{{ route('front.show.addons') }}">Addons</a>?</p>
         </div>
     @endif
 

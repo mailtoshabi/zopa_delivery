@@ -139,13 +139,13 @@
 </script>
 
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('<?php echo e(asset("front/js/sw.js")); ?>').then(function(reg) {
-      console.log('Zopa SW registered:', reg);
-    }).catch(function(error) {
-      console.log('Zopa SW registration failed:', error);
-    });
-  }
+//   if ('serviceWorker' in navigator) {
+//     navigator.serviceWorker.register('<?php echo e(asset("front/js/sw.js")); ?>').then(function(reg) {
+//       console.log('Zopa SW registered:', reg);
+//     }).catch(function(error) {
+//       console.log('Zopa SW registration failed:', error);
+//     });
+//   }
 </script>
 
 <script>

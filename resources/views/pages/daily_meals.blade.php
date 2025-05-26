@@ -13,9 +13,25 @@
     .empty-state p {
         font-size: 1.1rem;
     }
+    .alert-info {
+        background-color: #e7f3fe;
+        border-left: 4px solid #0d6efd;
+    }
 </style>
 <div class="container my-2">
     <x-flash-messages />
+
+    @if(isset($mealsLeft))
+        <div class="alert alert-info d-flex justify-content-between align-items-center mt-4 mb-4">
+            <div>
+                <i class="bi bi-wallet2 me-2"></i>
+                <strong>Meal Wallet Balance:</strong> {{ $mealsLeft }} meal{{ $mealsLeft == 1 ? '' : 's' }} remaining
+            </div>
+            <a href="{{ route('front.meal.plan') }}" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-plus"></i> Top Up
+            </a>
+        </div>
+    @endif
     <div class="text-center mb-4">
         <h2 class="position-relative d-inline-block px-4 py-2">
             Daily Meals
@@ -23,7 +39,7 @@
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
 
-    @if (session('success'))
+    {{-- @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -35,7 +51,7 @@
             {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+    @endif --}}
 
     <div class="mb-5">
 
@@ -47,19 +63,40 @@
             <div class="empty-state text-center text-muted my-4">
                 <i class="bi bi-calendar-x display-4 mb-2"></i>
                 @if($hasLeaveToday)
-                    <p class="text-danger">You are on Leave. No Daily Meal for today.</p>
+                    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Day Off:</strong> You’re on leave today, so no daily meal will be delivered.
+                        </div>
+                    </div>
                 @else
                     @if($mealsLeft>0)
-                        <p class="text-success">Your meal is on process will be updated here shortly.</p>
+                        <div class="alert alert-success d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Waiting for Update:</strong> Your daily meal is being processed and will be updated shortly.
+                            </div>
+                        </div>
                     @else
-                        <p class="text-danger">Your Meal Wallet is empty. <a href="{{ route('front.meal.plan') }}">Buy a Meal Plan</a></p>
+                        <div class="alert alert-danger d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Empty Wallet:</strong> Your Meal balance is zero. Please top up to continue receiving meals..
+                            </div>
+                            <a href="{{ route('front.meal.plan') }}" class="btn btn-sm btn-outline-success">
+                                <i class="fa-solid fa-headset text-success"></i> Buy a Meal Plan
+                            </a>
+                        </div>
                     @endif
                 @endif
             </div>
         @endif
-        @if(($mealsLeft < Utility::WALLET_LOW_BALANCE) && ($mealsLeft!=0))
-            <div class="empty-state text-center text-muted my-4">
-                <p class="text-warning">Your Meals balance is very low. <a href="{{ route('front.meal.plan') }}">Buy a Meal Plan</a></p>
+        @if(($mealsLeft < Utility::WALLET_LOW_BALANCE) && ($mealsLeft != 0))
+            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <strong>Low Meal Balance ({{ $mealsLeft }} left):</strong> Daily Meal will stop when your balance reaches zero.
+                </div>
+                <a href="{{ route('front.meal.plan') }}" class="btn btn-sm btn-outline-danger">
+                    <i class="fa-solid fa-headset"></i> Buy a Meal Plan
+                </a>
             </div>
         @endif
     </div>

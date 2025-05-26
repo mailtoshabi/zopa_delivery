@@ -267,7 +267,7 @@
         <i class="fa-solid fa-concierge-bell text-danger"></i>
         Meals
     </a>
-    <a href="{{ route('front.addons') }}">
+    <a href="{{ route('front.show.addons') }}">
         <i class="fa-solid fa-plus-circle text-warning"></i>
         Addons
     </a>

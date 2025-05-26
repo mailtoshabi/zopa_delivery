@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('phone')->unique();
             $table->string('whatsapp')->unique();
             $table->string('password');
-            $table->string('office_name');
-            $table->string('city');
+            $table->string('office_name')->nullable();
+            $table->string('city')->nullable();
             $table->string('landmark')->nullable();
             $table->string('designation')->nullable();
             $table->foreignId('district_id')->nullable();
@@ -29,6 +29,8 @@ return new class extends Migration
             $table->text('image_filename')->nullable();
             $table->foreignId('kitchen_id')->nullable()->constrained()->onDelete('cascade');
             $table->boolean('status')->comment('1-Active 0-Inactive')->default(1);
+            $table->string('otp_code')->nullable();
+            $table->timestamp('otp_expires_at')->nullable();
             $table->boolean('is_approved')->comment('1-Approved 0-Unapporved')->default(0);
             $table->foreignId('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();

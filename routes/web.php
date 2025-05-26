@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\DailyMealController;
 use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\RemarkController;
 use App\Http\Controllers\Front\CartController;
+use App\Http\Controllers\PaymentController as FrontPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,29 +58,54 @@ Route::get('/all_cache', function() {
 });
 
 // Route::get('/', [HomeController::class, 'index'])->name('index');
-Route::get('/', [LoginController::class, 'showLoginForm'])->name('index');
+// Route::get('/', [LoginController::class, 'showLoginForm'])->name('index');
+Route::get('/', function () {
+    return view('pages.home');
+})->name('index');
 Route::get('/test', [HomeController::class, 'test'])->name('test');
 
-Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('front.register');
-Route::post('/register', [RegisterController::class, 'register'])->name('front.register.submit');
-Route::post('/get-districts', [FrontHomeController::class, 'getDistrictList'])->name('get.districts');
-Route::get('/login', [LoginController::class, 'showLoginForm']);
-Route::prefix('customer')->name('customer.')->group(function () {
-    Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('login', [LoginController::class, 'login'])->name('login.submit');
-    Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+Route::group(['prefix'=>'sms', 'as'=>'sms.'], function() {
+    Route::get('/open', [HomeController::class, 'sms'])->name('index');
+    Route::post('/send', [HomeController::class, 'send'])->name('send');
 });
+
+Route::post('/get-districts', [FrontHomeController::class, 'getDistrictList'])->name('get.districts');
+
+// Route::middleware(['auth:guest'])->group(function () {
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('front.register');
+    Route::post('/register', [RegisterController::class, 'register'])->name('front.register.submit');
+
+    Route::post('/register/firebase', [RegisterController::class, 'registerWithFirebase'])->name('front.register.firebase');
+
+    Route::get('/verify-otp', [RegisterController::class, 'showOtpForm'])->name('verify.otp.form');
+    Route::post('/verify-otp', [RegisterController::class, 'verifyOtp'])->name('verify.otp');
+
+    // Route::get('/login', [LoginController::class, 'showLoginForm']);
+    Route::prefix('customer')->name('customer.')->group(function () {
+        Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+        Route::post('login', [LoginController::class, 'login'])->name('login.submit');
+
+    });
+// });
 Route::middleware(['auth:customer', 'approved.customer'])->prefix('meal')->group(function () {
-    Route::get('/buy-plans', [FrontHomeController::class, 'mealPlan'])->name('front.meal.plan');
-    Route::get('/buy-single', [FrontHomeController::class, 'singleMeal'])->name('front.meal.single');
-    Route::get('/purchase/{meal}', [FrontHomeController::class, 'showPurchasePage'])->name('meal.purchase');
+
+    Route::get('/registration-success', function () {
+        return view('pages.registration_success');
+    })->name('front.registration.success');
+    Route::post('customer/logout', [LoginController::class, 'logout'])->name('customer.logout');
+
+
+    Route::get('/purchase/{meal}', [FrontHomeController::class, 'showMealPurchasePage'])->name('meal.purchase');
     Route::post('/purchase/{meal}', [FrontHomeController::class, 'purchaseMeal'])->name('meal.purchase.store');
     Route::get('/meal/payment-success/{order}', [FrontHomeController::class, 'showMealPaymentSuccess'])->name('meal.payment.success');
 
-    Route::get('/buy-addons', [FrontHomeController::class, 'addons'])->name('front.addons');
-    Route::post('/addons/confirm', [FrontHomeController::class, 'purchaseAddon'])->name('addons.purchase.confirm');
-    Route::post('/addons/store', [FrontHomeController::class, 'storeAddonPurchase'])->name('addons.purchase.store');
+    Route::post('/addons/confirm', [FrontHomeController::class, 'showAddonPurchasePage'])->name('addons.purchase.confirm');
+    Route::post('/addons/store', [FrontHomeController::class, 'addonPurchase'])->name('addons.purchase.store');
     Route::get('/addons/payment-success/{order}', [FrontHomeController::class, 'showAddonPaymentSuccess'])->name('addons.payment.success');
+
+    Route::get('/payment-failed', function () {
+        return view('pages.payment_failed');
+    })->name('meal.payment.failed');
 
     Route::get('/my-wallet', [FrontHomeController::class, 'myWallet'])->name('my.wallet');
     Route::get('/daily-meals', [FrontHomeController::class, 'dailyMeals'])->name('customer.daily_meals');
@@ -91,8 +117,6 @@ Route::middleware(['auth:customer', 'approved.customer'])->prefix('meal')->group
     Route::post('my-leaves', [FrontHomeController::class, 'markLeaves'])->name('customer.mark.leaves');
     Route::delete('/my-leaves/{id}', [FrontHomeController::class, 'destroyLeave'])->name('customer.meal-leaves.destroy');
     Route::post('/addon-wallet/toggle-status', [FrontHomeController::class, 'toggleStatus'])->name('addonWallet.toggleStatus');
-
-    Route::get('/how-to-use-pdf', [FrontHomeController::class, 'downloadHowToUse'])->name('how_to_use_pdf');
 
     Route::get('/feedbacks', [FrontHomeController::class, 'feedbacks'])->name('feedbacks');
     Route::post('feedback', [FrontHomeController::class, 'storeFeedback'])->name('customer.feedback.store');
@@ -111,6 +135,8 @@ Route::middleware(['auth:customer', 'approved.customer'])->prefix('meal')->group
 });
 
 Route::middleware(['auth:customer', 'approved.customer'])->group(function () {
+    Route::post('/meal/payment/verify', [FrontPaymentController::class, 'verifyRazorpayPayment'])->name('meal.payment.verify');
+
     Route::get('/profile', [FrontHomeController::class, 'profile'])->name('customer.profile');
     Route::put('/profile', [FrontHomeController::class, 'updateProfile'])->name('customer.profile.update');
 
@@ -118,15 +144,23 @@ Route::middleware(['auth:customer', 'approved.customer'])->group(function () {
     Route::put('/profile/change-password', [FrontHomeController::class, 'updatePassword'])->name('customer.password.update');
 });
 
+Route::get('/buy-plans', [FrontHomeController::class, 'showMealPlans'])->name('front.meal.plan');
+Route::get('/buy-single', [FrontHomeController::class, 'showSingleMeal'])->name('front.meal.single');
+Route::get('/buy-addons', [FrontHomeController::class, 'showAddons'])->name('front.show.addons');
+
 Route::get('/about-us', [FrontHomeController::class, 'about_us'])->name('about_us');
 Route::get('/payment-terms', [FrontHomeController::class, 'payment_terms'])->name('payment_terms');
 Route::get('/privacy-policy', [FrontHomeController::class, 'privacy_policy'])->name('privacy_policy');
 Route::get('/support', [FrontHomeController::class, 'support'])->name('support');
 Route::get('/meals/faq', [FrontHomeController::class, 'faq'])->name('faq');
 Route::get('/meals/how-to-use', [FrontHomeController::class, 'how_to_use'])->name('how_to_use');
+Route::get('/how-to-use-pdf', [FrontHomeController::class, 'downloadHowToUse'])->name('how_to_use_pdf');
 Route::get('/meals/site-map', [FrontHomeController::class, 'site_map'])->name('site_map');
 Route::view('/offline', 'pages.offline')->name('offline');
 
+
+
+// ADMIN ROUTES START
 
 Auth::routes(['login' => false, 'register'=>false]);
 Route::prefix('admin')->group(function () {
@@ -157,11 +191,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::middleware(['role:Administrator|Manager'])->group(function () {
         Route::resource('customers', CustomerController::class);
+        Route::get('wallets', [CustomerController::class, 'wallets'])->name('customers.wallets');
+        Route::get('wallets/status/{id}', [CustomerController::class, 'toggleWalletStatus'])->name('customers.wallets.toggleWalletStatus');
+        Route::post('wallets/bulk-toggle', [CustomerController::class, 'bulkToggleWalletStatus'])->name('customers.wallets.bulkToggle');
+        Route::get('customers/status/{id}', [CustomerController::class, 'changeStatus'])->name('customers.changeStatus');
+
+        Route::get('addon-wallets', [CustomerController::class, 'addon_wallets'])->name('customers.addon.wallets');
+        Route::get('addon-wallets/status/{id}', [CustomerController::class, 'toggleAddonWalletStatus'])->name('customers.addons.toggleWalletStatus');
+        Route::post('addons/bulk-toggle', [CustomerController::class, 'bulkToggleAddonWalletStatus'])->name('customers.addons.bulkToggle');
+
         Route::get('customers/status/{id}', [CustomerController::class, 'changeStatus'])->name('customers.changeStatus');
         Route::get('customers/approve/{id}',[CustomerController::class,'approve'])->name('approve');
     });
 
-    Route::prefix('customers/feedbacks')->name('customers.feedbacks.')->group(function () {
+    Route::prefix('feedbacks')->name('feedbacks.')->group(function () {
         Route::get('/', [FeedbackController::class, 'index'])->name('index');
         Route::get('/toggle/{id}', [FeedbackController::class, 'togglePublic'])->name('togglePublic');
         Route::post('/{feedback}/reply-ajax', [FeedbackController::class, 'replyAjax'])->name('reply.ajax');

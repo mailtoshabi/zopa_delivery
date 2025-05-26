@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
+use Twilio\Rest\Client;
 
 class HomeController extends Controller
 {
@@ -151,28 +152,38 @@ class HomeController extends Controller
     // }
 
     public function test() {
-        // $var = 'Password updated successfully!';
-        // return $this->productPrice(1,5);
-
-        // return Utility::cleanString($var);
-        // return set_active('test');
-        // return Utility::numToWords(4);
 
 
-        //whether ip is from the share internet
-    //  if(!empty($_SERVER['HTTP_CLIENT_IP'])) {
-    //     $ip = $_SERVER['HTTP_CLIENT_IP'];
-    // }
-    // //whether ip is from the proxy
-    // elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-    //         $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-    // }
-    // //whether ip is from the remote address
-    // else{
-        // $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-    // }
-    // return $_SERVER['REMOTE_ADDR'];
-    $invoice = 'ZP-' . str_pad(10, 6, '0', STR_PAD_LEFT) . '-' . date('mY');
+    }
+
+    public function sms() {
+        return view('pages.sms');
+    }
+
+    public function send() {
+        // Find your Account SID and Auth Token at twilio.com/console
+        // and set the environment variables. See http://twil.io/secure
+
+        $sid = config('services.twilio.sid');
+        $token = config('services.twilio.token');
+        $sender_number = config('services.twilio.from');
+        $mobile = '+91'.request()->mobile;
+
+        if (!$sid || !$token) {
+            throw new \Exception('Twilio credentials not configured.');
+        }
+
+        $twilio = new Client($sid, $token);
+
+        $message = $twilio->messages
+                        ->create($mobile, // to
+                                [
+                                    "body" => request()->description,
+                                    "from" => $sender_number
+                                ]
+                        );
+
+        dd("Message Sent Successfully");
 
     }
 }

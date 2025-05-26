@@ -97,7 +97,7 @@
             {{ $errors->first() }}
         </div>
     @endif
-
+    @if($addons->isNotEmpty())
     <form action="{{ route('addons.purchase.confirm') }}" method="POST">
         @csrf
         <div class="row">
@@ -175,6 +175,16 @@
             </button>
         </div>
     </form>
+    @else
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+            <div>
+                Currently No addons available. Will update here shortly.
+            </div>
+            <a href="{{ route('support') }}" class="btn btn-sm btn-outline-danger">
+                <i class="fa-solid fa-headset"></i> Contact Support
+            </a>
+        </div>
+    @endif
 </div>
 
 <script>

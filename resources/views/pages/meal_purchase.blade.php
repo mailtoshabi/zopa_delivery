@@ -194,6 +194,11 @@
                             @endforeach
                         </div>
                         @endif
+                        {{-- Grand Total --}}
+                        <div class="text-end mb-3">
+                            <h5><strong>Grand Total: ₹<span id="grand-total">{{ number_format($meal->price, 2) }}</span></strong></h5>
+                        </div>
+
                         <hr>
                         {{-- Payment Method --}}
                         <div class="mb-3 mt-4">
@@ -265,5 +270,37 @@
                 $(this).find('button[type=submit]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Progress...');
             });
         });
+    </script>
+
+    <script>
+        function updateGrandTotal() {
+            let mealPrice = parseFloat({{ $meal->price }});
+            let addonTotal = 0;
+
+            document.querySelectorAll('.addon-checkbox:checked').forEach(checkbox => {
+                const card = checkbox.closest('.addon-card');
+                const qtyInput = card.querySelector('.addon-qty');
+                const quantity = parseInt(qtyInput.value) || 1;
+                const priceText = card.querySelector('.addon-details span').textContent.replace('₹', '').trim();
+                const price = parseFloat(priceText);
+
+                addonTotal += price * quantity;
+            });
+
+            const grandTotal = mealPrice + addonTotal;
+            document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+        }
+
+        // Attach event listeners to checkboxes and quantity inputs
+        document.querySelectorAll('.addon-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateGrandTotal);
+        });
+
+        document.querySelectorAll('.addon-qty').forEach(input => {
+            input.addEventListener('input', updateGrandTotal);
+        });
+
+        // Trigger update once on page load
+        updateGrandTotal();
     </script>
 @endpush

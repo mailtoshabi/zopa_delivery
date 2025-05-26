@@ -9,7 +9,9 @@ use App\Http\Utilities\Utility;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Customer;
 use App\Helpers\FileHelper;
+use App\Models\AddonWallet;
 use App\Models\Kitchen;
+use App\Models\MealWallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -112,6 +114,66 @@ class CustomerController extends Controller
         $fileName = Utility::generateFileName($name, $request->file('image')->extension());
         $request->image->storeAs(Customer::DIR_PUBLIC, $fileName);
         return $fileName;
+    }
+
+    public function wallets()
+    {
+        $wallets = MealWallet::with('customer')
+                    ->orderBy('quantity', 'asc')
+                    ->paginate(Utility::PAGINATE_COUNT);
+
+        return view('admin.wallets.index', compact('wallets'));
+    }
+
+    public function addon_wallets()
+    {
+        $wallets = AddonWallet::with('customer')
+                    ->orderBy('quantity', 'asc')
+                    ->paginate(Utility::PAGINATE_COUNT);
+
+        return view('admin.wallets.addons', compact('wallets'));
+    }
+
+    public function toggleWalletStatus($encryptedId)
+    {
+        $id = decrypt($encryptedId);
+        $wallet = MealWallet::findOrFail($id);
+        $wallet->status = !$wallet->status;
+        $wallet->save();
+
+        return redirect()->back()->with('success', 'Wallet status updated successfully.');
+    }
+
+    public function toggleAddonWalletStatus($encryptedId)
+    {
+        $id = decrypt($encryptedId);
+        $wallet = AddonWallet::findOrFail($id);
+        $wallet->status = !$wallet->status;
+        $wallet->save();
+
+        return redirect()->back()->with('success', 'Wallet status updated successfully.');
+    }
+
+    public function bulkToggleWalletStatus(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        MealWallet::whereIn('id', $ids)->each(function ($wallet) {
+            $wallet->status = !$wallet->status;
+            $wallet->save();
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    public function bulkToggleAddonWalletStatus(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        AddonWallet::whereIn('id', $ids)->each(function ($wallet) {
+            $wallet->status = !$wallet->status;
+            $wallet->save();
+        });
+
+        return response()->json(['success' => true]);
     }
 
 }

@@ -19,10 +19,22 @@
                     <h4 class="mb-3">Meal Wallet</h4>
                 </div>
                 <div class="card-body">
+                    @if($meal_wallet->status == 0)
+                        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Inactive Wallet:</strong> Your meal wallet is currently inactive. Daily meals will not be delivered.
+                            </div>
+                            <a href="{{ route('support') }}" class="btn btn-sm btn-outline-danger">
+                                <i class="fa-solid fa-headset"></i> Contact Support
+                            </a>
+                        </div>
+                    @endif
+
                     <small class="text-muted d-block mt-1 mb-3">
                         If you have meal balance, Daily Meal gets auto-delivered — no need to set a reminder or do anything.<br>
                         Just mark leave if you want to skip a day. Sundays are already off!
                     </small>
+
                     <div class="row d-flex align-items-center" style="width: 100%;">
                         <div class="col-sm-12 col-md-6 mb-3 mb-md-0">
                             <div class="d-flex align-items-center">
@@ -31,10 +43,11 @@
                                     alt="Meals"
                                     class="rounded me-3 shadow-sm"
                                     style="width: 50px; height: 50px; object-fit: cover;">
-
-                                {{-- Meals Left (badge style) --}}
-                                <span class="me-2">Meals</span>
-                                <span class="badge bg-success rounded-pill">{{ $mealsLeft }} left</span>
+                                <span class="me-2 {{ $meal_wallet->status ? 'text-dark' : 'text-muted' }}">Meals</span>
+                                <span class="badge {{ $meal_wallet->status ? 'bg-success' : 'bg-secondary' }} rounded-pill">{{ $meal_wallet ? $meal_wallet->quantity : 0 }} left</span>
+                                @if($meal_wallet->quantity < Utility::WALLET_LOW_BALANCE)
+                                    <span class="badge bg-danger rounded-pill">Low Balance</span><span>&nbsp;&nbsp;<a href="{{ route('front.meal.plan') }}" >Buy Meals</a></span>
+                                @endif
                             </div>
                         </div>
 
@@ -61,10 +74,20 @@
                             Don’t want it? Just switch it off!
                         </small>
 
+                        @if($addon_wallet->where('status', 0)->count() > 0)
+                            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Note:</strong> Suspended addons will not be delivered.
+                                    <br class="d-sm-none">
+                                    To activate, <a href="{{ route('support') }}">contact support</a>.
+                                </div>
+                            </div>
+                        @endif
+
                         <ul class="list-group">
                             @foreach($addon_wallet as $item)
                                 <li class="list-group-item d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
+                                    <div class=" align-items-center">
                                         @if($item->addon->image_filename)
                                         {{-- Addon Image --}}
                                         <img src="{{ Storage::url('addons/' . $item->addon->image_filename) }}"
@@ -74,7 +97,7 @@
                                         @endif
 
                                         {{-- Addon Name --}}
-                                        <span>{{ $item->addon->name }}</span>
+                                        <span class="{{ $item->status ? 'text-dark' : 'text-muted' }}"><strong>{{ $item->addon->name }}</strong></span>
                                         @if($item->addon->description)
                                             <small>&nbsp;<i class="fa-solid fa-circle-info text-zopa"
                                             data-bs-toggle="tooltip"
@@ -82,19 +105,36 @@
                                             data-bs-placement="top"
                                             title="{!! nl2br(e($item->addon->description)) !!}"></i></small>
                                         @endif
+
+                                        @if($item->status == 0)
+                                            <span class="badge bg-danger text-white ms-2">Suspended</span>
+                                        @else
+                                            <span class="addon-status-badge ms-2" data-id="{{ $item->id }}">
+                                                @if($item->is_on == 0)
+                                                    <span class="badge bg-warning text-dark">Inactive</span>
+                                                @endif
+                                            </span>
+
+
+                                            @if($item->quantity < Utility::WALLET_LOW_BALANCE)
+                                                <span class="badge bg-danger rounded-pill">Low Balance</span><span>&nbsp;&nbsp;<a href="{{ route('front.show.addons') }}" >Buy Addons</a></span>
+                                            @endif
+                                        @endif
                                     </div>
 
                                     {{-- Quantity Badge and Toggle --}}
                                     <div class="d-flex align-items-center">
-                                        <span class="badge bg-success rounded-pill me-3">{{ $item->quantity }} left</span>
+                                        <span class="badge {{ $item->status ? 'bg-success' : 'bg-secondary' }} rounded-pill me-3">{{ $item->quantity }} left</span>
 
                                         {{-- Toggle switch only --}}
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input addon-status-toggle"
-                                                type="checkbox"
-                                                data-id="{{ $item->id }}"
-                                                {{ $item->is_on ? 'checked' : '' }}>
-                                        </div>
+                                        @if($item->status == 1)
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input addon-status-toggle"
+                                                    type="checkbox"
+                                                    data-id="{{ $item->id }}"
+                                                    {{ $item->is_on ? 'checked' : '' }}>
+                                            </div>
+                                        @endif
                                     </div>
                                 </li>
                             @endforeach
@@ -102,11 +142,12 @@
                     </div>
                 @else
                     <div class="card-body text-center">
-                        <p class="text-muted d-block mt-3">
-                            Addons Wallet is empty.
+                        <p class="text-muted mt-3">
+                            You haven't purchased any addons yet. Get started by choosing from our delicious extras!
                         </p>
-                        <a href="{{ route('front.addons') }}" class="btn btn-zopa makeButtonDisable">
-                            <i class="fa-solid fa-plus-circle"></i>&nbsp;&nbsp;Buy Addons</a>
+
+                        <a href="{{ route('front.show.addons') }}" class="btn btn-zopa makeButtonDisable">
+                            <i class="fa-solid fa-plus-circle"></i>&nbsp;&nbsp;Buy Addons
                         </a>
                     </div>
                 @endif
@@ -140,7 +181,7 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const toggles = document.querySelectorAll('.addon-status-toggle');
+    const toggles = document.querySelectorAll('.addon-status-toggle');
 
         toggles.forEach(function(toggle) {
             toggle.addEventListener('change', function() {
@@ -163,7 +204,14 @@
                 })
                 .then(data => {
                     if (data.success) {
-                        // No need to change text (you don’t actually have status text here anyway)
+                        const badgeContainer = document.querySelector(`.addon-status-badge[data-id="${walletId}"]`);
+                        if (badgeContainer) {
+                            if (isOn === 1) {
+                                badgeContainer.innerHTML = '';
+                            } else {
+                                badgeContainer.innerHTML = '<span class="badge bg-warning text-dark">Inactive</span>';
+                            }
+                        }
                     } else {
                         alert('Failed to update toggle.');
                         toggle.checked = !isOn;

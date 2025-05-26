@@ -40,6 +40,7 @@ return [
   "Add_Product" => "Add Product",
   "Crypto" => "Crypto",
   "Wallet" => "Wallet",
+  "Wallets" => "Wallets",
   "Buy_Sell" => "Buy/Sell",
   "Exchange" => "Exchange",
   "Lending" => "Lending",
@@ -247,11 +248,13 @@ return [
     "Add_Meal" => "Add Meal",
     "Edit_Meal" => "Edit Meal",
     "Meal_List" => "Meal List",
+    "Meal_Wallet" => "Meal Wallet",
 
     "Addon_Manage" => "Addons",
     "Add_Addon" => "Add Addon",
     "Edit_Addon" => "Edit Addon",
     "Addon_List" => "Addon List",
+    "Addon_Wallet" => "Addon Wallet",
 
     "Enquiry_Manage" => "Enquiries",
     "Add_Enquiry" => "Add Enquiry",
@@ -288,6 +291,7 @@ return [
     "Add_Customer" => "Add Customer",
     "Edit_Customer" => "Edit Customer",
     "Customer_List" => "Customer List",
+    "Feedbacks" => "Feedbacks",
 
     "User_Management" => "Users",
     "Add_User" => "Add User",

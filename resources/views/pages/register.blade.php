@@ -7,9 +7,12 @@
     <div class="card shadow overflow-auto" style="width: 100%; max-width: 400px;">
         <div class="card-body">
             <div class="text-center mb-4 logo_bg pb-4 pt-4">
-                <img src="{{ asset('front/images/logo.png') }}" alt="Zopa Food Drop" style="height: 100px; max-width: 100%;">
+                <a href="{{ route('index') }}">
+                    <img src="{{ asset('front/images/logo.png') }}" alt="Zopa Food Drop" style="height: 100px; max-width: 100%;">
+                </a>
             </div>
             <h4 class="card-title text-center mb-4">Signup</h4>
+
             @if ($errors->any())
                 <div class="alert alert-danger">
                     <ul class="mb-0">
@@ -25,36 +28,46 @@
 
                 {{-- Personal Information --}}
                 <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="name" id="name" placeholder="Name" value="">
+                    <input type="text" class="form-control pe-5" name="name" id="name" placeholder="Name" value="{{ old('name') }}">
                     <i class="fa fa-user input-icon"></i>
                 </div>
 
-                <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="phone" id="phone" placeholder="Mobile Number" value="">
+                <div class="mb-1 position-relative has-tooltip">
+                    <input type="text" class="form-control pe-5" name="phone" id="phone" placeholder="Mobile Number" value="{{ old('phone') }}">
                     <i class="fa fa-phone input-icon"></i>
+                </div>
+                <div class="mb-1 text-end">
+                    <div id="recaptcha-container"></div>
+                    <a href="#" id="sendOtp" class="text-primary "><small>Send OTP</small></a>
+                </div>
+                <div class="mb-3">
+                    <!-- OTP input -->
+                    <input type="text" class="form-control pe-5" name="otp" id="otp" placeholder="Enter OTP" />
                 </div>
 
                 <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="whatsapp" id="whatsapp" placeholder="WhatsApp Number" value="">
+                    <input type="text" class="form-control pe-5" name="whatsapp" id="whatsapp" placeholder="WhatsApp Number" value="{{ old('whatsapp') }}">
                     <i class="fab fa-whatsapp input-icon"></i>
                 </div>
 
-                <div class="mb-3 position-relative">
+                <div class="mb-3 position-relative has-tooltip">
                     <input type="password" class="form-control pe-5" name="password" placeholder="Password" value="">
                     <i class="fa fa-lock input-icon"></i>
+                    <button type="button" class="input-tooltip-btn" data-bs-toggle="tooltip" title="Password must be at least 8 characters, include 1 uppercase, 1 lowercase, 1 number, and 1 special character">
+                        <i class="fa fa-info-circle text-primary"></i>
+                    </button>
                 </div>
 
-                <hr>
-
                 {{-- Office / Delivery Information --}}
+                {{--                 <hr>
+
                 <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="office_name" id="office_name" placeholder="Shop/Office Name" value="">
+                    <input type="text" class="form-control pe-5" name="office_name" id="office_name" placeholder="Shop/Office Name" value="{{ old('office_name') }}">
                     <i class="fa fa-building input-icon"></i>
                 </div>
 
-                {{-- Shop/Office Location with tooltip info inside input --}}
                 <div class="mb-3 position-relative has-tooltip">
-                    <input type="text" class="form-control pe-5" name="city" id="city" placeholder="Shop/Office Location" value="">
+                    <input type="text" class="form-control pe-5" name="city" id="city" placeholder="Shop/Office Location" value="{{ old('city') }}">
                     <i class="fa fa-map-marker input-icon"></i>
                     <button type="button" class="input-tooltip-btn" data-bs-toggle="tooltip" title="Meals delivered Here">
                         <i class="fa fa-info-circle text-primary"></i>
@@ -62,21 +75,23 @@
                 </div>
 
                 <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="landmark" placeholder="Landmark" value="">
+                    <input type="text" class="form-control pe-5" name="landmark" placeholder="Landmark" value="{{ old('landmark') }}">
                     <i class="fa fa-location-arrow input-icon"></i>
                 </div>
 
                 <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="designation" id="designation" placeholder="Job Designation" value="">
+                    <input type="text" class="form-control pe-5" name="designation" id="designation" placeholder="Job Designation" value="{{ old('designation') }}">
                     <i class="fa fa-briefcase input-icon"></i>
                 </div>
 
                 <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="postal_code" id="postal_code" placeholder="Postal Code" value="">
+                    <input type="text" class="form-control pe-5" name="postal_code" id="postal_code" placeholder="Postal Code" value="{{ old('postal_code') }}">
                     <i class="fa fa-envelope input-icon"></i>
-                </div>
+                </div> --}}
 
-                {{-- <div class="mb-3 position-relative">
+                {{-- Uncomment if you want to enable state/district selection --}}
+                {{--
+                <div class="mb-3 position-relative">
                     <select name="state_id" id="state_id" class="form-control select2 pe-5" onchange="getDistrict(this.value, 0);">
                         <option value="" disabled selected>Select State</option>
                         @foreach($states as $state)
@@ -92,25 +107,27 @@
                     </select>
                     <i class="fa fa-map-pin input-icon"></i>
                 </div> --}}
-
-                <hr>
-
                 {{-- Nearest Kitchen --}}
+                {{--                 <hr>
+
                 <div class="mb-3 position-relative">
                     <select id="kitchen_id" name="kitchen_id" class="form-control select2 pe-5">
                         <option value="" disabled selected>Select Nearest Zopa Kitchen</option>
                         @foreach ($kitchens as $kitchen)
-                            <option value="{{ encrypt($kitchen->id) }}" {{ (Utility::KITCHEN_KDY == $kitchen->id) ? 'selected' : '' }}>{{ $kitchen->name }}</option>
+                            <option value="{{ encrypt($kitchen->id) }}" {{ (old('kitchen_id') == encrypt($kitchen->id) || (Utility::KITCHEN_KDY == $kitchen->id && !old('kitchen_id'))) ? 'selected' : '' }}>
+                                {{ $kitchen->name }}
+                            </option>
                         @endforeach
                     </select>
                     <i class="fa fa-cutlery input-icon"></i>
-                </div>
+                </div> --}}
 
-                <button type="submit" class="btn btn-zopa w-100">Signup</button>
+                <button type="submit" id="verifyOtp" class="btn btn-zopa w-100">Verify OTP & Signup</button>
             </form>
 
             <div class="text-center mt-3">
-                <small>Already have an account? <a href="{{ route('index') }}">Login</a></small>
+                <small>Already have an account? <a href="{{ route('customer.login') }}">Login</a></small><br>
+                <small>Back to the <a href="{{ route('index') }}">Home Page </a></small>
             </div>
         </div>
     </div>
@@ -118,52 +135,99 @@
 @endsection
 
 @push('styles')
-    <style>
-        .input-icon {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-            pointer-events: none;
-        }
+<style>
+    .input-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+    }
 
-        /* Adjust input padding if input has tooltip button */
-        .has-tooltip .form-control {
-            padding-right: 65px !important; /* wider padding to fit both icon + tooltip */
-        }
+    /* Adjust input padding if input has tooltip button */
+    .has-tooltip .form-control {
+        padding-right: 65px !important; /* wider padding to fit both icon + tooltip */
+    }
 
-        /* Adjust input padding for normal icon-only case */
-        .position-relative:not(.has-tooltip) .form-control {
-            padding-right: 40px !important;
-        }
+    /* Adjust input padding for normal icon-only case */
+    .position-relative:not(.has-tooltip) .form-control {
+        padding-right: 40px !important;
+    }
 
-        /* Tooltip button spacing — sit just left of icon */
-        .input-tooltip-btn {
-            position: absolute;
-            right: 30px; /* 30px to leave space between tooltip and icon */
-            top: 50%;
-            transform: translateY(-50%);
-            padding: 0;
-            border: none;
-            background: transparent;
-            z-index: 3;
-        }
+    /* Tooltip button spacing — sit just left of icon */
+    .input-tooltip-btn {
+        position: absolute;
+        right: 30px; /* 30px to leave space between tooltip and icon */
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 0;
+        border: none;
+        background: transparent;
+        z-index: 3;
+    }
 
-        /* Optional — smaller tooltip icon size */
-        .input-tooltip-btn i {
-            font-size: 16px;
-            color: #6c757d;
-        }
+    /* Optional — smaller tooltip icon size */
+    .input-tooltip-btn i {
+        font-size: 16px;
+        color: #6c757d;
+    }
 
-        /* Optional — red border when input is invalid */
-        .invalid {
-            border-color: #dc3545 !important;
-        }
-    </style>
+    /* Optional — red border when input is invalid */
+    .invalid {
+        border-color: #dc3545 !important;
+    }
+</style>
 @endpush
 
 @push('scripts')
+<!-- Firebase App (the core Firebase SDK) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+
+<!-- Firebase Authentication -->
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
+
+
+<script>
+    const firebaseConfig = @json($firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
+
+    let confirmationResult;
+    let recaptchaVerifier;
+
+    // Initialize ReCAPTCHA on load
+    window.onload = function () {
+        recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            size: 'invisible',
+            callback: function (response) {
+                // reCAPTCHA solved, proceed with OTP
+            }
+        });
+
+        recaptchaVerifier.render(); // Important!
+    };
+
+    // Handle OTP Send
+    document.getElementById("sendOtp").addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const phone = document.getElementById("phone").value.trim();
+        if (!phone.match(/^[6-9]\d{9}$/)) {
+            alert("Enter a valid 10-digit Indian mobile number.");
+            return;
+        }
+
+        const phoneNumber = "+91" + phone;
+
+        firebase.auth().signInWithPhoneNumber(phoneNumber, recaptchaVerifier)
+            .then(function (result) {
+                confirmationResult = result;
+                alert("OTP sent successfully!");
+            }).catch(function (error) {
+                alert("OTP Error: " + error.message);
+            });
+    });
+</script>
 <script>
     // function getDistrict(stateId, selectedDistrictId = 0) {
     //     $.ajax({
@@ -176,24 +240,24 @@
     //     });
     // }
 
-
     $(document).ready(function() {
         // Load districts on page load
         // getDistrict({{ Utility::STATE_ID_KERALA }}, 0);
-    });
 
-    $(document).ready(function() {
+        $('[data-bs-toggle="tooltip"]').tooltip();
+
         $('form#registerForm').on('submit', function(event) {
             event.preventDefault();
 
             let form = $(this);
             let submitButton = form.find('button[type=submit]');
             let isValid = true;
-            let requiredFields = ["name", "phone", "password", "office_name", "city", "whatsapp", "postal_code", "kitchen_id"];
+            let requiredFields = ["name", "phone", "otp", "password", "whatsapp"]; //, "office_name", "city", "postal_code", "kitchen_id"
 
             // Clear previous errors
             form.find('input, select').removeClass('invalid');
             form.find('.alert.alert-danger').remove();
+            form.find('.form-control').removeClass('invalid');
 
             // Trim all text inputs
             form.find('input[type=text]').each(function() {
@@ -209,7 +273,7 @@
                 }
             });
 
-            // Validate Indian phone number format (starts with 6-9, exactly 10 digits)
+            // Validate Indian phone number format (starts with 5-9, exactly 10 digits)
             const phonePattern = /^[5-9]\d{9}$/;
             ['phone', 'whatsapp'].forEach(name => {
                 let input = form.find(`[name="${name}"]`);
@@ -230,6 +294,32 @@
             if (!isValid) {
                 return;
             }
+
+            const otp = $('#otp').val().trim();
+
+            if (!confirmationResult) {
+                alert('Please send OTP first.');
+                return;
+            }
+
+            confirmationResult.confirm(otp).then(function (result) {
+                const user = result.user;
+                console.log("Verified UID: ", user.uid);
+                alert("Verified UID: ", user.uid);
+
+                // Optionally attach Firebase UID in hidden field if needed
+                // const input = document.createElement("input");
+                // input.type = "hidden";
+                // input.name = "firebase_uid";
+                // input.value = user.uid;
+                // document.getElementById('registerForm').appendChild(input);
+
+                // Submit the form now
+                // document.getElementById('registerForm').submit();
+
+            }).catch(function (error) {
+                alert("Invalid OTP: " + error.message);
+            });
 
             // If valid, disable button and show "Progress..."
             submitButton.prop('disabled', true).text('Progress...');

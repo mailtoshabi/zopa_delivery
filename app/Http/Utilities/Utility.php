@@ -30,6 +30,7 @@ class Utility{
     const MAX_MONTHLY_LEAVES = 5;
     const MAX_ACTIVE_LEAVES = 5;
     const WALLET_LOW_BALANCE = 5;
+    const OTP_EXPIRY_MINUTE = 5;
 
 
     const PAGINATE_COUNT = 15;

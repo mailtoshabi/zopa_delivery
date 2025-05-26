@@ -25,11 +25,13 @@
                 <li><strong>Buy a Plan:</strong> Go to <em>Zopa Meals → Buy A Plan</em>. Select a prepaid plan and pay online or via Cash on Delivery. Meals will be added to your <strong>Meal Wallet</strong>.</li>
                 <li><strong>Buy Single Meal:</strong> Go to <em>Zopa Meals → Buy Single</em>. Select the meal, quantity, and pay for a one-time order.</li>
             </ul>
+            <p><small><i>Note: Even single meal purchases are assigned in the morning like prepaid plans. Make sure you haven’t applied for leave.</i></small></p>
 
             <hr>
 
             <h5 class="text-secondary mb-3"><i class="fa-solid fa-utensils"></i> Purchase Add-ons (Optional)</h5>
             <p>Enhance your daily meals with extra items. Visit <em>Add-ons</em> to purchase side dishes like beef fry or fish fry. These are delivered along with your main meal.</p>
+            <p><small><i>Note: Add-on purchases cannot be canceled after {{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }} on the day of delivery.</i></small></p>
 
             <hr>
 
@@ -52,8 +54,10 @@
             <h5 class="text-secondary mb-3"><i class="fa-solid fa-calendar-xmark"></i> Apply for a Meal Leave</h5>
             <p>Not eating on a certain day? Go to <em>My Leaves</em> and mark the day off.</p>
             <ul>
-                <li>You can apply leave up to <strong>{{ Utility::MAX_LEAVE_DAYS_AHEAD }}</strong> days ahead.</li>
-                <li>Leaves <strong>cannot be cancelled</strong> after <strong>{{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong> on the same day.</li>
+                <li>You can apply leave up to <strong>{{ Utility::MAX_LEAVE_DAYS_AHEAD }}</strong> days in advance.</li>
+                <li>You <strong>cannot mark leave for past dates</strong>.</li>
+                <li>Today's leave must be applied <strong>before {{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong>.</li>
+                <li>Leaves <strong>cannot be canceled</strong> after the cutoff time on the same day.</li>
             </ul>
 
             <hr>
@@ -64,6 +68,16 @@
                 <li>Your <strong>Meal Wallet balance</strong> is always visible in the top-right menu.</li>
                 <li>Past transactions are listed under <em>My Purchases</em>.</li>
                 <li>To add more meals to your wallet, simply purchase a new plan under <em>Buy A Plan</em>.</li>
+                <li>After purchasing a plan or meal, you can <strong>view, print, or share</strong> your payment confirmation from the success page or My Purchases.</li>
+            </ul>
+
+            <hr>
+
+            <h5 class="text-secondary mb-3"><i class="fa-solid fa-truck"></i> Track Delivery Status</h5>
+            <ul>
+                <li>Go to <em>Daily Orders</em> to check the delivery status of your meals.</li>
+                <li>If a meal is not delivered, you may see a tooltip with the reason.</li>
+                <li>Add-on deliveries are also shown under the same section.</li>
             </ul>
 
             <hr>
@@ -86,7 +100,7 @@
             <ul>
                 <li><strong>Can't log in?</strong> Make sure your account is approved and active. Contact us if needed.</li>
                 <li><strong>Meal not assigned today?</strong> Check if your wallet has balance or if you applied a leave.</li>
-                <li><strong>Missed the cutoff time?</strong> Orders and leaves can't be changed after <strong>{{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong>.</li>
+                <li><strong>Missed the cutoff time?</strong> Orders, leaves, and add-on changes can't be made after <strong>{{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong>.</li>
             </ul>
 
             <hr>
@@ -97,6 +111,7 @@
                 <li>Keep your Meal Wallet loaded to avoid missing meals.</li>
                 <li>Don't forget to apply leaves before <strong>{{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong>.</li>
             </ul>
+
             <a class="btn btn-zopa" href="{{ route('how_to_use_pdf') }}">
                 <i class="fas fa-download me-1"></i> Download PDF
             </a>
