@@ -1,0 +1,138 @@
+<?php $__env->startSection('title'); ?> <?php echo app('translator')->get('translation.Meal_Wallet'); ?> <?php $__env->stopSection(); ?>
+<?php $__env->startSection('css'); ?>
+<link href="<?php echo e(URL::asset('/assets/libs/datatables.net-bs4/datatables.net-bs4.min.css')); ?>" rel="stylesheet">
+<link href="<?php echo e(URL::asset('assets/libs/datatables.net-responsive-bs4/datatables.net-responsive-bs4.min.css')); ?>" rel="stylesheet" />
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('content'); ?>
+<?php $__env->startComponent('admin.dir_components.breadcrumb'); ?>
+    <?php $__env->slot('li_1'); ?> <?php echo app('translator')->get('translation.Meal_Manage'); ?> <?php $__env->endSlot(); ?>
+    <?php $__env->slot('li_2'); ?> <?php echo app('translator')->get('translation.Meal_Wallet'); ?> <?php $__env->endSlot(); ?>
+    <?php $__env->slot('title'); ?> <?php echo app('translator')->get('translation.Meal_Wallet'); ?> <?php $__env->endSlot(); ?>
+<?php echo $__env->renderComponent(); ?>
+
+<?php if(session()->has('success')): ?>
+<div class="alert alert-success alert-top-border alert-dismissible fade show" role="alert">
+    <i class="mdi mdi-check-all me-3 align-middle text-success"></i>
+    <strong>Success</strong> - <?php echo e(session()->get('success')); ?>
+
+</div>
+<?php endif; ?>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card mb-0">
+            <div class="card-body">
+                <div class="tab-content p-3 text-muted">
+                    <div class="tab-pane active" role="tabpanel">
+                        <div class="row align-items-center mb-3">
+                            <div class="col-md-6">
+                                <h5 class="card-title">Meal Wallets <span class="text-muted fw-normal ms-2">(<?php echo e($wallets->total()); ?>)</span></h5>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mb-4">
+                            <div class="mb-3">
+                                <button id="bulk-status-toggle" class="btn btn-outline-primary">Toggle Status (Selected)</button>
+                            </div>
+
+                            <table class="table align-middle dt-responsive table-check nowrap" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="select-all"></th>
+                                        <th>Customer</th>
+                                        <th>Phone</th>
+                                        <th>Wallet Quantity</th>
+                                        <th>Status</th>
+                                        <th>Updated At</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $__currentLoopData = $wallets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wallet): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr>
+                                        <td><input type="checkbox" class="wallet-checkbox" value="<?php echo e($wallet->id); ?>"></td>
+                                        <td><?php echo e($wallet->customer->name ?? '-'); ?></td>
+                                        <td><?php echo e($wallet->customer->phone ?? '-'); ?></td>
+                                        <td><strong><?php echo e($wallet->quantity); ?></strong></td>
+                                        <td><?php echo $wallet->status ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Suspended</span>'; ?></td>
+                                        <td><?php echo e($wallet->updated_at->format('d M Y, h:i A')); ?></td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-link font-size-16 shadow-none py-0 text-muted dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bx bx-dots-horizontal-rounded"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <a class="dropdown-item" href="<?php echo e(route('admin.customers.wallets.toggleWalletStatus', encrypt($wallet->id))); ?>">
+                                                            <?php echo $wallet->status
+                                                                ? '<i class="fas fa-power-off font-size-16 text-danger me-1"></i> Suspend'
+                                                                : '<i class="fas fa-circle-notch font-size-16 text-success me-1"></i> Activate'; ?>
+
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                            <div class="pagination justify-content-center mt-3">
+                                <?php echo e($wallets->links()); ?>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('script'); ?>
+<script src="<?php echo e(URL::asset('assets/libs/datatables.net/datatables.net.min.js')); ?>"></script>
+<script src="<?php echo e(URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js')); ?>"></script>
+<script src="<?php echo e(URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js')); ?>"></script>
+<script src="<?php echo e(URL::asset('assets/js/app.min.js')); ?>"></script>
+<script src="<?php echo e(URL::asset('assets/js/pages/datatable-pages.init.js')); ?>"></script>
+
+<script>
+document.getElementById('select-all').addEventListener('click', function () {
+    let checkboxes = document.querySelectorAll('.wallet-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+});
+
+document.getElementById('bulk-status-toggle').addEventListener('click', function () {
+    let selected = Array.from(document.querySelectorAll('.wallet-checkbox:checked')).map(cb => cb.value);
+
+    if (selected.length === 0) {
+        alert('Please select at least one wallet.');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to toggle the status for selected wallets?')) return;
+
+    fetch("<?php echo e(route('admin.customers.wallets.bulkToggle')); ?>", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': "<?php echo e(csrf_token()); ?>"
+        },
+        body: JSON.stringify({ ids: selected })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Something went wrong!');
+        }
+    });
+});
+</script>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('admin.layouts.master', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\zopa_delivery\resources\views\admin\wallets\index.blade.php ENDPATH**/ ?>

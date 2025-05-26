@@ -29,8 +29,9 @@ return new class extends Migration
             $table->text('image_filename')->nullable();
             $table->foreignId('kitchen_id')->nullable()->constrained()->onDelete('cascade');
             $table->boolean('status')->comment('1-Active 0-Inactive')->default(1);
-            $table->string('otp_code')->nullable();
-            $table->timestamp('otp_expires_at')->nullable();
+            $table->text('firebase_uid')->nullable();
+            // $table->string('otp_code')->nullable();
+            // $table->timestamp('otp_expires_at')->nullable();
             $table->boolean('is_approved')->comment('1-Approved 0-Unapporved')->default(0);
             $table->foreignId('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();

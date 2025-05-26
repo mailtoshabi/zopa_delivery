@@ -36,19 +36,35 @@
                     <input type="text" class="form-control pe-5" name="phone" id="phone" placeholder="Mobile Number" value="{{ old('phone') }}">
                     <i class="fa fa-phone input-icon"></i>
                 </div>
-                <div class="mb-1 text-end">
-                    <div id="recaptcha-container"></div>
-                    <a href="#" id="sendOtp" class="text-primary "><small>Send OTP</small></a>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="has_whatsapp" id="has_whatsapp" value="1" {{ old('has_whatsapp') ? 'checked' : '' }}>
+                        <label class="form-check-label text-success" for="has_whatsapp">
+                            Has WhatsApp
+                        </label>
+                    </div>
+
+                    <div id="recaptcha-container" class="me-2"></div>
+
+                    <a href="#" id="sendOtp" class="text-primary"><small>Send OTP</small></a>
                 </div>
-                <div class="mb-3">
-                    <!-- OTP input -->
+                <div id="otp-container" class="mb-3" style="display: none;">
                     <input type="text" class="form-control pe-5" name="otp" id="otp" placeholder="Enter OTP" />
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <small id="otp-message" class="text-success"></small>
+                        <small id="resend-wrapper" class="text-end">
+                            <span id="resend-timer" class="text-muted"></span>
+                            <a href="#" id="resendOtp" class="text-primary ms-2" style="display: none;">Resend OTP</a><br>
+                            <small id="resend-attempts-left" class="text-muted"></small>
+                        </small>
+                    </div>
                 </div>
 
-                <div class="mb-3 position-relative">
+                {{-- <div class="mb-3 position-relative">
                     <input type="text" class="form-control pe-5" name="whatsapp" id="whatsapp" placeholder="WhatsApp Number" value="{{ old('whatsapp') }}">
                     <i class="fab fa-whatsapp input-icon"></i>
-                </div>
+                </div> --}}
 
                 <div class="mb-3 position-relative has-tooltip">
                     <input type="password" class="form-control pe-5" name="password" placeholder="Password" value="">
@@ -187,6 +203,80 @@
 <!-- Firebase Authentication -->
 <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
 
+<script>
+    let countdownInterval;
+    let countdown = 60;
+    let resendAttempts = 0;
+    const MAX_RESEND_ATTEMPTS = 2;
+    let otpFailed = false;
+
+    function updateAttemptsLeft() {
+        const remaining = MAX_RESEND_ATTEMPTS - resendAttempts;
+        const text = remaining > 0 ? `(${remaining} resend${remaining > 1 ? 's' : ''} left)` : "No resends left";
+        document.getElementById("resend-attempts-left").textContent = text;
+    }
+
+    function startResendTimer() {
+        countdown = 60;
+        document.getElementById("resendOtp").style.display = "none";
+        document.getElementById("resend-timer").textContent = `Resend OTP in ${countdown}s`;
+
+        countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                document.getElementById("resend-timer").textContent = `Resend OTP in ${countdown}s`;
+            } else {
+                clearInterval(countdownInterval);
+
+                // Show "Resend OTP" only if attempts < MAX
+                if (resendAttempts < MAX_RESEND_ATTEMPTS) {
+                    document.getElementById("resendOtp").style.display = "inline";
+                    document.getElementById("resend-timer").textContent = "";
+                } else {
+                    document.getElementById("resend-timer").textContent = "Max OTP attempts reached";
+                    document.getElementById("resendOtp").style.display = "none";
+                }
+            }
+        }, 1000);
+    }
+
+    // Shared function
+    function sendOtp(isResend = false) {
+        const phoneInput = document.getElementById("phone");
+        const phone = phoneInput.value.trim();
+
+        if (!phone.match(/^[6-9]\d{9}$/)) {
+            alert("Enter a valid 10-digit Indian mobile number.");
+            return;
+        }
+
+        const phoneNumber = "+91" + phone;
+
+        firebase.auth().signInWithPhoneNumber(phoneNumber, recaptchaVerifier)
+            .then(function (result) {
+                confirmationResult = result;
+
+                if (!isResend) {
+                    phoneInput.disabled = true; // Disable phone on first attempt
+                    document.getElementById("sendOtp").style.display = "none";
+                    $('#otp-container').fadeIn();
+                }
+
+                otpFailed = false; // reset fail flag
+                document.getElementById("otp-message").textContent = "OTP sent successfully!";
+                updateAttemptsLeft();
+                startResendTimer();
+            }).catch(function (error) {
+                otpFailed = true;
+                alert("OTP Error: " + error.message);
+
+                // Re-enable phone if first send or final resend fails
+                if (!confirmationResult || resendAttempts >= MAX_RESEND_ATTEMPTS) {
+                    document.getElementById("phone").disabled = false;
+                }
+            });
+    }
+</script>
 
 <script>
     const firebaseConfig = @json($firebaseConfig);
@@ -207,25 +297,23 @@
         recaptchaVerifier.render(); // Important!
     };
 
-    // Handle OTP Send
+
+    // Handle initial OTP send
     document.getElementById("sendOtp").addEventListener("click", function (e) {
         e.preventDefault();
+        sendOtp();
+    });
 
-        const phone = document.getElementById("phone").value.trim();
-        if (!phone.match(/^[6-9]\d{9}$/)) {
-            alert("Enter a valid 10-digit Indian mobile number.");
-            return;
-        }
+    // Handle resend
+    document.getElementById("resendOtp").addEventListener("click", function (e) {
+        e.preventDefault();
 
-        const phoneNumber = "+91" + phone;
+        // Block if max attempts reached (failsafe)
+        if (resendAttempts >= MAX_RESEND_ATTEMPTS) return;
 
-        firebase.auth().signInWithPhoneNumber(phoneNumber, recaptchaVerifier)
-            .then(function (result) {
-                confirmationResult = result;
-                alert("OTP sent successfully!");
-            }).catch(function (error) {
-                alert("OTP Error: " + error.message);
-            });
+        resendAttempts++;
+        updateAttemptsLeft();
+        sendOtp(true);
     });
 </script>
 <script>
@@ -248,11 +336,13 @@
 
         $('form#registerForm').on('submit', function(event) {
             event.preventDefault();
+            // Enable the phone field so it gets submitted
+            $('#phone').prop('disabled', false);
 
             let form = $(this);
             let submitButton = form.find('button[type=submit]');
             let isValid = true;
-            let requiredFields = ["name", "phone", "otp", "password", "whatsapp"]; //, "office_name", "city", "postal_code", "kitchen_id"
+            let requiredFields = ["name", "phone", "otp", "password"]; //, "office_name", "city", "postal_code", "kitchen_id"
 
             // Clear previous errors
             form.find('input, select').removeClass('invalid');
@@ -275,7 +365,7 @@
 
             // Validate Indian phone number format (starts with 5-9, exactly 10 digits)
             const phonePattern = /^[5-9]\d{9}$/;
-            ['phone', 'whatsapp'].forEach(name => {
+            ['phone'].forEach(name => {
                 let input = form.find(`[name="${name}"]`);
                 if (!phonePattern.test(input.val())) {
                     input.addClass("invalid");
@@ -291,11 +381,16 @@
                 isValid = false;
             }
 
-            if (!isValid) {
+            const otp = $('#otp').val().trim();
+
+            if (!otp) {
+                alert('Please Get & Enter the OTP.');
                 return;
             }
 
-            const otp = $('#otp').val().trim();
+            if (!isValid) {
+                return;
+            }
 
             if (!confirmationResult) {
                 alert('Please send OTP first.');
@@ -304,18 +399,15 @@
 
             confirmationResult.confirm(otp).then(function (result) {
                 const user = result.user;
-                console.log("Verified UID: ", user.uid);
-                alert("Verified UID: ", user.uid);
+                // console.log("Verified UID: ", user.uid);
+                // alert("Verified UID: " + user.uid);
 
                 // Optionally attach Firebase UID in hidden field if needed
-                // const input = document.createElement("input");
-                // input.type = "hidden";
-                // input.name = "firebase_uid";
-                // input.value = user.uid;
-                // document.getElementById('registerForm').appendChild(input);
-
-                // Submit the form now
-                // document.getElementById('registerForm').submit();
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "firebase_uid";
+                input.value = user.uid;
+                document.getElementById('registerForm').appendChild(input);
 
             }).catch(function (error) {
                 alert("Invalid OTP: " + error.message);

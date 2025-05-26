@@ -56,20 +56,21 @@ class RegisterController extends Controller
                 'min:8',
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
             ],
-            'office_name'  => 'required',
-            'whatsapp'     => [
-                'required',
-                'unique:customers,whatsapp',
-                'regex:/^[6-9]\d{9}$/',
-            ],
-            'kitchen_id'   => 'required',
-            'city'         => 'required',
-            'postal_code'  => 'required',
+            'has_whatsapp' => 'nullable|boolean',
+            // 'office_name'  => 'required',
+            // 'whatsapp'     => [
+            //     'required',
+            //     'unique:customers,whatsapp',
+            //     'regex:/^[6-9]\d{9}$/',
+            // ],
+            // 'kitchen_id'   => 'required',
+            // 'city'         => 'required',
+            // 'postal_code'  => 'required',
         ];
 
         $messages = [
             'phone.regex' => 'The phone number must be a valid 10-digit Indian mobile number.',
-            'whatsapp.regex' => 'The WhatsApp number must be a valid 10-digit Indian mobile number.',
+            // 'whatsapp.regex' => 'The WhatsApp number must be a valid 10-digit Indian mobile number.',
             'password.regex' => 'Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.',
             'password.min' => 'Password must be at least 8 characters long.',
         ];
@@ -83,26 +84,30 @@ class RegisterController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $otp = rand(100000, 999999);
-        $expiresAt = now()->addMinutes(Utility::OTP_EXPIRY_MINUTE);
+        // $otp = rand(100000, 999999);
+        // $expiresAt = now()->addMinutes(Utility::OTP_EXPIRY_MINUTE);
+
+        $whatsApp = $request->has('has_whatsapp') ? $request->phone : '';
 
         $customer = Customer::create([
             'name' => $request->name,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'office_name' => $request->office_name,
-            'city' => $request->city,
-            'landmark' => $request->landmark,
-            'designation' => $request->designation,
-            'whatsapp' => $request->whatsapp,
+            // 'office_name' => $request->office_name,
+            // 'city' => $request->city,
+            // 'landmark' => $request->landmark,
+            // 'designation' => $request->designation,
+            'whatsapp' => $whatsApp,
             'district_id' => Utility::DISTRICT_ID_MPM,
             'state_id' => Utility::STATE_ID_KERALA,
             'postal_code' => $request->postal_code,
-            'kitchen_id' => decrypt($request->kitchen_id),
+            // 'kitchen_id' => decrypt($request->kitchen_id),
+            'kitchen_id' => Utility::KITCHEN_KDY,
             'status' => Utility::ITEM_ACTIVE,
-            'is_approved' => 0,
-            'otp_code' => $otp,
-            'otp_expires_at' => $expiresAt,
+            'is_approved' => 1,
+            'firebase_uid' => $request->firebase_uid,
+            // 'otp_code' => $otp,
+            // 'otp_expires_at' => $expiresAt,
         ]);
 
         MealWallet::create([
@@ -116,25 +121,29 @@ class RegisterController extends Controller
 
         // Check if approved and active
         if ($customer->is_approved && $customer->status == Utility::ITEM_ACTIVE) {
-            $redirectUrl = route('front.meal.plan'); // adjust this route name to your dashboard
+            // Login the customer
+            Auth::guard('customer')->login($customer);
+            $redirectUrl = route('front.registration.success');
             $successMessage = 'Registration successful! Welcome to your dashboard.';
         } else {
 
             // Store phone or customer ID in session for OTP verification
-            session(['otp_customer_id' => $customer->id]);
+            // session(['otp_customer_id' => $customer->id]);
             // Auth::logout();
 
             // Send OTP
-            $twilio = new TwilioService();
-            $twilio->sendSms(Utility::COUNTRY_CODE.$customer->phone, "Your Zopa OTP is {$otp}");
+            // $twilio = new TwilioService();
+            // $twilio->sendSms(Utility::COUNTRY_CODE.$customer->phone, "Your Zopa OTP is {$otp}");
 
-            $redirectUrl = route('verify.otp.form');
-            $successMessage = 'Registration successful. Our Support Team will contact you soon and activate your account!';
+            // $redirectUrl = route('verify.otp.form');
+            // $redirectUrl = route('front.registration.success');
+            // $successMessage = 'Registration successful. Our Support Team will contact you soon and activate your account!';
+            return 'Something Went Wrong';
         }
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => $successMessage,
+                // 'message' => $successMessage,
                 'redirect_url' => $redirectUrl
             ]);
         }
@@ -201,44 +210,5 @@ class RegisterController extends Controller
     //         'redirect_url' => route('front.registration.success'),
     //     ]);
     // }
-
-    public function verifyOtp(Request $request, FirebaseAuth $firebaseAuth)
-    {
-        $request->validate([
-            'firebase_token' => 'required|string',
-        ]);
-
-        try {
-            $verifiedIdToken = $firebaseAuth->verifyIdToken($request->firebase_token);
-            $phoneNumber = $verifiedIdToken->claims()->get('phone_number');
-
-            if (!$phoneNumber) {
-                return response()->json(['errors' => ['otp' => ['Phone number not found in token.']]], 422);
-            }
-
-            // Strip country code (optional, depending on how you store it)
-            $strippedPhone = ltrim($phoneNumber, '+91'); // Adjust as needed
-
-            $customer = Customer::where('phone', $strippedPhone)->first();
-
-            if (!$customer) {
-                return response()->json(['errors' => ['otp' => ['Customer not found. Please register.']]], 422);
-            }
-
-            if (!$customer->is_approved) {
-                return response()->json(['errors' => ['otp' => ['Your account is not yet approved.']]], 422);
-            }
-
-            if (!$customer->status) {
-                return response()->json(['errors' => ['otp' => ['Your account has been disabled.']]], 422);
-            }
-
-            Auth::guard('customer')->login($customer);
-
-            return response()->json(['redirect_url' => route('customer.daily_orders')]);
-        } catch (FailedToVerifyToken $e) {
-            return response()->json(['errors' => ['otp' => ['Invalid or expired Firebase token.']]], 422);
-        }
-    }
 
 }

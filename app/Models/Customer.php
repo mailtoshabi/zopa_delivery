@@ -48,6 +48,7 @@ class Customer extends Authenticatable
         'is_approved',
         'otp_code',
         'otp_expires_at',
+        'firebase_uid',
         'user_id',
     ];
 
