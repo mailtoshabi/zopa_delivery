@@ -250,31 +250,64 @@
             return;
         }
 
-        const phoneNumber = "+91" + phone;
+        // Show loading overlay
+        document.getElementById("loading-overlay").style.display = "flex";
 
-        firebase.auth().signInWithPhoneNumber(phoneNumber, recaptchaVerifier)
-            .then(function (result) {
-                confirmationResult = result;
 
-                if (!isResend) {
-                    phoneInput.disabled = true; // Disable phone on first attempt
-                    document.getElementById("sendOtp").style.display = "none";
-                    $('#otp-container').fadeIn();
-                }
+        // Step 1: Check if the customer exists
+        fetch("{{ route('front.customer.exists') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ phone })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                alert("An account with this phone number already exists. Please login.");
+                window.location.href = '{{ route('customer.login') }}';
+            } else {
+                const phoneNumber = "+91" + phone;
 
-                otpFailed = false; // reset fail flag
-                document.getElementById("otp-message").textContent = "OTP sent successfully!";
-                updateAttemptsLeft();
-                startResendTimer();
-            }).catch(function (error) {
-                otpFailed = true;
-                alert("OTP Error: " + error.message);
+                firebase.auth().signInWithPhoneNumber(phoneNumber, recaptchaVerifier)
+                    .then(function (result) {
+                        confirmationResult = result;
 
-                // Re-enable phone if first send or final resend fails
-                if (!confirmationResult || resendAttempts >= MAX_RESEND_ATTEMPTS) {
-                    document.getElementById("phone").disabled = false;
-                }
-            });
+                        if (!isResend) {
+                            phoneInput.disabled = true; // Disable phone on first attempt
+                            document.getElementById("sendOtp").style.display = "none";
+                            $('#otp-container').fadeIn();
+                        }
+
+                        otpFailed = false; // reset fail flag
+                        document.getElementById("otp-message").textContent = "OTP sent successfully!";
+                        updateAttemptsLeft();
+                        startResendTimer();
+                    }).catch(function (error) {
+                        otpFailed = true;
+                        alert("OTP Error: " + error.message);
+
+                        // Re-enable phone if first send or final resend fails
+                        if (!confirmationResult || resendAttempts >= MAX_RESEND_ATTEMPTS) {
+                            document.getElementById("phone").disabled = false;
+                        }
+                    })
+                    .finally(() => {
+                        document.getElementById("loading-overlay").style.display = "none";
+                    });
+            }
+        })
+        .catch(error => {
+            console.error("Error checking customer:", error);
+            alert("Something went wrong. Please try again.");
+        })
+        .finally(() => {
+            // Hide overlay even if error occurs in fetch
+            document.getElementById("loading-overlay").style.display = "none";
+        });
+
     }
 </script>
 

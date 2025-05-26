@@ -168,6 +168,23 @@ class RegisterController extends Controller
         return view('pages.verify_otp', compact('customer'));
     }
 
+    public function checkCustomerExists(Request $request)
+    {
+        $phone = $request->input('phone');
+
+        if (!$phone) {
+            return response()->json(['exists' => false, 'error' => 'Phone number is required'], 400);
+        }
+
+        $customer = Customer::where('phone', $phone)->first();
+
+        if ($customer) {
+            return response()->json(['exists' => true]);
+        }
+
+        return response()->json(['exists' => false]);
+    }
+
 
     // // verifyOtp for Twilio
     // public function verifyOtp(Request $request)

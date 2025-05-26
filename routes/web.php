@@ -75,6 +75,8 @@ Route::post('/get-districts', [FrontHomeController::class, 'getDistrictList'])->
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('front.register');
     Route::post('/register', [RegisterController::class, 'register'])->name('front.register.submit');
 
+    Route::post('/check-customer', [RegisterController::class, 'checkCustomerExists'])->name('front.customer.exists');
+
     Route::post('/register/firebase', [RegisterController::class, 'registerWithFirebase'])->name('front.register.firebase');
 
     Route::get('/verify-otp', [RegisterController::class, 'showOtpForm'])->name('verify.otp.form');
@@ -93,7 +95,6 @@ Route::middleware(['auth:customer', 'approved.customer'])->prefix('meal')->group
         return view('pages.registration_success');
     })->name('front.registration.success');
     Route::post('customer/logout', [LoginController::class, 'logout'])->name('customer.logout');
-
 
     Route::get('/purchase/{meal}', [FrontHomeController::class, 'showMealPurchasePage'])->name('meal.purchase');
     Route::post('/purchase/{meal}', [FrontHomeController::class, 'purchaseMeal'])->name('meal.purchase.store');
