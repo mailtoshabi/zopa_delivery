@@ -72,7 +72,17 @@
         </div>
     </div>
 </div>
+
+@include('partials.how_to_use_modal')
 @endsection
 
 @push('scripts')
+<script>
+    $(document).ready(function () {
+        if (!sessionStorage.getItem('howToUseShown')) {
+            $('#howToUseModal').modal('show');
+            sessionStorage.setItem('howToUseShown', 'true');
+        }
+    });
+</script>
 @endpush

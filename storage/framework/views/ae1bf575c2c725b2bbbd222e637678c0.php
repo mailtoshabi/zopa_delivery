@@ -70,9 +70,19 @@
         </div>
     </div>
 </div>
+
+<?php echo $__env->make('partials.how_to_use_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>
+<script>
+    $(document).ready(function () {
+        if (!sessionStorage.getItem('howToUseShown')) {
+            $('#howToUseModal').modal('show');
+            sessionStorage.setItem('howToUseShown', 'true');
+        }
+    });
+</script>
 <?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\zopa_delivery\resources\views/pages/home.blade.php ENDPATH**/ ?>
