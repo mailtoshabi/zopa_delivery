@@ -108,6 +108,18 @@
     </div>
 </nav>
 
+@if($customer && empty($customer->city) )
+    <div class="alert alert-danger d-flex justify-content-between align-items-center mx-4 mt-4 mb-4">
+        <div>
+            <i class="bi bi-wallet2 me-2"></i>
+            <strong>Complete Your Address</strong> to recieve the meals to your doorstep.
+        </div>
+        <a href="{{ route('customer.profile') }}?edit=true" class="btn btn-sm btn-outline-danger text-danger">
+            <i class="fa-solid fa-pencil text-danger"></i> Complete your Address
+        </a>
+    </div>
+@endif
+
 <!-- Mobile Menu -->
 <div class="mobile-menu" id="mobileMenu">
     <span class="close-btn" onclick="toggleMenu()">&times;</span>

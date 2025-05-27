@@ -141,7 +141,7 @@ Route::middleware(['auth:customer', 'approved.customer'])->group(function () {
     Route::post('/meal/payment/verify', [FrontPaymentController::class, 'verifyRazorpayPayment'])->name('meal.payment.verify');
 
     Route::get('/profile', [FrontHomeController::class, 'profile'])->name('customer.profile');
-    Route::put('/profile', [FrontHomeController::class, 'updateProfile'])->name('customer.profile.update');
+    Route::put('/profile-update', [FrontHomeController::class, 'updateProfile'])->name('customer.profile.update');
 
     Route::get('/profile/change-password', [FrontHomeController::class, 'showChangePasswordForm'])->name('customer.profile.password.change');
     Route::put('/profile/change-password', [FrontHomeController::class, 'updatePassword'])->name('customer.password.update');

@@ -8,10 +8,8 @@ use App\Http\Utilities\Utility;
 use App\Models\Addon;
 use App\Models\AddonWallet;
 use App\Models\Customer;
-use App\Models\CustomerAddon;
 use App\Models\Meal;
 use App\Models\MealWallet;
-use App\Models\CustomerMeal;
 use App\Models\CustomerOrder;
 use App\Models\DailyAddon;
 use App\Models\DailyMeal;
@@ -25,6 +23,11 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
 use Razorpay\Api\Api;
 use Illuminate\Support\Facades\Session;
@@ -921,57 +924,116 @@ public function profile()
 public function updateProfile(Request $request)
 {
 
-    $customer_id = auth('customer')->id();
-    $customer = Customer::findOrFail($customer_id);
+    $customer = Customer::findOrFail(auth('customer')->id());
 
-    // Validation rules (phone and password removed)
-    $validated = $request->validate([
+    // Validation rules
+    $rules = [
         'name' => 'required|string|max:255',
         'office_name' => 'required|string|max:255',
         'designation' => 'nullable|string|max:255',
         'whatsapp' => 'nullable|string|max:15',
         'city' => 'required|string|max:255',
         'landmark' => 'nullable|string|max:255',
-        'postal_code' => 'required|string|max:10',
+        'postal_code' => 'required|string|max:6',
+        'image' => 'nullable',
         // 'state_id' => 'required|exists:states,id',
         // 'district_id' => 'required|exists:districts,id',
-        'image' => 'nullable|image|max:2048',
-    ]);
+    ];
 
-    // Update customer profile data
-    $customer->update([
-        'name' => $validated['name'],
-        'office_name' => $validated['office_name'],
-        'designation' => $validated['designation'],
-        'whatsapp' => $validated['whatsapp'],
-        'city' => $validated['city'],
-        'landmark' => $validated['landmark'],
-        'postal_code' => $validated['postal_code'],
-        // 'state_id' => $validated['state_id'],
-        // 'district_id' => $validated['district_id'],
-    ]);
+    // Custom messages
+    $messages = [
+        'name.required' => 'Please enter your full name.',
+        'name.max' => 'Name should not exceed 255 characters.',
+        'office_name.required' => 'Please enter your office or company name.',
+        'city.required' => 'City is required.',
+        'postal_code.required' => 'Please enter your postal code.',
+        'postal_code.max' => 'Postal code must be under 6 characters.',
+        'image.image' => 'Uploaded file must be an image.',
+        // 'image.max' => 'Image size should not exceed 512KB.',
+    ];
 
-    if ($request->isImageDelete == 1 && $customer->image_filename) {
+    $validated = $request->validate($rules, $messages);
+
+    // Update basic fields
+    $customer->update($validated);
+
+    if ($request->input('isImageDelete') == 1 && $customer->image_filename) {
         FileHelper::deleteFile(Customer::DIR_PUBLIC, $customer->image_filename);
         // $input['image_filename'] = null;
         $customer->image_filename = null;
         $customer->save();
     }
 
-    if ($request->hasFile('image')) {
-        $customer->image_filename = $this->handleImageUpload($request, $request->name);
+    // if ($request->hasFile('image')) {
+    //     $customer->image_filename = $this->handleImageUpload($request, $request->name);
+    //     $customer->save();
+    // }
+
+    if ($request->has('cropped_image') && $request->input('cropped_image')) {
+        $customer->image_filename = $this->handleCroppedImageUpload($request, $request->name);
         $customer->save();
+    }
+
+    if ($request->ajax()) {
+        return response()->json(['message' => 'Profile updated successfully']);
     }
 
     return redirect()->route('customer.profile')->with('success', 'Profile updated successfully');
 }
 
-private function handleImageUpload(Request $request, string $name): string
-    {
-        $fileName = Utility::generateFileName($name, $request->file('image')->extension());
-        $request->image->storeAs(Customer::DIR_PUBLIC, $fileName);
-        return $fileName;
+private function handleCroppedImageUpload(Request $request, string $name): string
+{
+    $base64Image = $request->input('cropped_image');
+
+    // Extract image data from base64
+    $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $base64Image);
+    $imageData = base64_decode($imageData);
+
+    // Detect image extension
+    preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches);
+    $extension = $matches[1] ?? 'jpg'; // fallback to jpg
+
+    // Generate a clean filename
+    $fileName = Utility::generateFileName($name, $extension);
+
+    $storagePath = storage_path('app/public/' . Customer::DIR_PUBLIC . '/' . $fileName);
+
+    // Handle compression logic based on raw size
+    $approxSize = strlen($imageData); // Base64 decoded size in bytes
+
+    $manager = new ImageManager(new GdDriver());
+    $image = $manager->read($imageData);
+
+    if ($approxSize > 524288) {
+        $image->scale(width: 1024)->save($storagePath, quality: 75);
+    } else {
+        $image->save($storagePath);
     }
+
+    return $fileName;
+}
+
+
+private function handleImageUpload(Request $request, string $name): string
+{
+    $file = $request->file('image');
+    $extension = $file->getClientOriginalExtension();
+    $fileName = Utility::generateFileName($name, $extension);
+
+    $path = storage_path('app/public/' . Customer::DIR_PUBLIC . '/' . $fileName);
+
+    $manager = new ImageManager(new GdDriver()); // ✅ Correct way in v3
+
+    if ($file->getSize() > 524288) {
+        $manager->read($file)
+            ->scale(width: 1024)
+            ->save($path, quality: 75);
+    } else {
+        $file->storeAs(Customer::DIR_PUBLIC, $fileName);
+    }
+
+    return $fileName;
+}
 
     public function showChangePasswordForm()
 {

@@ -25,7 +25,7 @@
         <div class="alert alert-info d-flex justify-content-between align-items-center mt-4 mb-4">
             <div>
                 <i class="bi bi-wallet2 me-2"></i>
-                <strong>Meal Wallet Balance:</strong> {{ $mealsLeft }} meal{{ $mealsLeft == 1 ? '' : 's' }} remaining
+                <strong>Meal Balance:</strong> {{ $mealsLeft }} No{{ $mealsLeft == 1 ? '' : 's' }}.
             </div>
             <a href="{{ route('front.meal.plan') }}" class="btn btn-sm btn-outline-primary">
                 <i class="fa-solid fa-plus"></i> Top Up

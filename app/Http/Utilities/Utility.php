@@ -78,8 +78,12 @@ class Utility{
         ];
     }
 
-    public static function generateFileName($name, $extension): string {
-        return self::cleanString($name) . now()->format('YmdHis') . '.' . $extension;
+    public static function generateFileName($name, $extension): string
+    {
+        $cleanName = self::cleanString($name);
+        $timestamp = now()->format('YmdHis');
+
+        return "{$cleanName}_{$timestamp}.{$extension}";
     }
 
     public static function otp()
@@ -149,17 +153,22 @@ class Utility{
         return empty($data) ? '' : $data . '_';
     }
 
-    public static function cleanString($string) {
-        $string = str_replace(' ','_', $string); // Replaces all spaces with underscore.
-        $string = str_replace('-_','_', $string);
-        $string = str_replace('_-','_', $string);
-        $string = str_replace('-','_', $string);
-        $string = str_replace('--','_', $string);
-        $string = str_replace('__','_', $string);
+    public static function cleanString($string)
+    {
+        // Replace spaces and dashes with underscores
+        $string = str_replace([' ', '-', '_'], '_', $string);
 
-        $string = preg_replace('/[^A-Za-z.0-9\-_]/', '', $string); // Removes special chars.
+        // Remove multiple underscores
+        $string = preg_replace('/_+/', '_', $string);
 
-        return Str::limit($string, $limit = 25, $end = '...');
+        // Remove any character that is not a-z, A-Z, 0-9, dot, or underscore
+        $string = preg_replace('/[^A-Za-z0-9._]/', '', $string);
+
+        // Trim leading/trailing underscores or dots
+        $string = trim($string, '._');
+
+        // Limit the base name length (before file extension)
+        return Str::limit($string, 25, '');
     }
 
     public static function currencyToWords(float $number)

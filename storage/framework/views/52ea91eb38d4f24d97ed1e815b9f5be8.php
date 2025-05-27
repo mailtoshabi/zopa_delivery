@@ -12,4 +12,4 @@
 <?php echo $__env->yieldContent('script'); ?>
 <?php echo $__env->yieldContent('script-bottom'); ?>
 
-<?php /**PATH C:\xampp\htdocs\zopa_delivery\resources\views\admin\layouts\vendor-scripts.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\zopa_delivery\resources\views/admin/layouts/vendor-scripts.blade.php ENDPATH**/ ?>

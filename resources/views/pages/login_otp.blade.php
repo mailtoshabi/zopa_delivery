@@ -41,7 +41,7 @@
             </div>
 
             <div class="text-center mt-3">
-                <small>Remembered your password? <a href="{{ route('customer.login') }}">Login with password</a></small><br>
+                <small><a href="{{ route('customer.login') }}">Login with password</a></small><br>
                 <small>Back to the <a href="{{ route('index') }}">Home Page</a></small>
             </div>
         </div>

@@ -139,6 +139,7 @@
             100% { transform: rotate(360deg); }
         }
     </style>
+    @stack('style')
 </head>
 <body class="d-flex flex-column min-vh-100">
     <div id="loading-overlay" style="display: none;">
