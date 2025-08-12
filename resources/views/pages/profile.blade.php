@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'My Zopa Profile')
+@section('title', 'My Zopa Profile ' . config('app.name'))
 
 @section('content')
 <div class="container my-4">
@@ -126,7 +126,7 @@
 
                     <div class="col-md-6">
                         <label for="city" class="form-label">Shop/Office Location <span class="text-danger">*</span></label>
-                        <input id="city" name="city" type="text" class="form-control" placeholder="City" value="{{ old('city', $customer->city) }}">
+                        <input id="city" name="city" type="text" class="form-control" placeholder="Location" value="{{ old('city', $customer->city) }}">
                         @error('city') <div class="text-danger small">{{ $message }}</div> @enderror
                     </div>
 
@@ -169,7 +169,7 @@
                                 @if(!empty($customer->image_filename))
                                     <img src="{{ Storage::url(App\Models\Customer::DIR_PUBLIC . '/' . $customer->image_filename) }}" alt="Profile Image" class="rounded-circle img-thumbnail mb-2" width="120">
                                     <br>
-                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeImageBtn">Remove Image</button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="changeImageBtn">Change Image</button>
                                 @endif
                             </span>
 
@@ -181,7 +181,56 @@
                             <input type="hidden" name="isImageDelete" value="0">
                         </div>
                     </div>
+                    @if (empty($customer->kitchen) || empty($customer->location_name))
+                        <div class="col-sm-12 required">
+                            <label for="postal_code">Location</label>
 
+                            <!-- Input group for input + tooltip button -->
+                            <div class="input-group mb-2">
+                                <input type="text" id="autocomplete" placeholder="Enter location" class="form-control" value="{{ isset($customer)?$customer->location_name:old('location_name')}}">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    onclick="getCurrentLocation()"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="left"
+                                    title="Use current location">
+                                    📍
+                                </button>
+                                @error('location_name') <div class="text-danger small">{{ $message }}</div> @enderror
+                            </div>
+
+                            <!-- Hidden fields -->
+                            <input type="hidden" name="latitude" id="latitude" value="{{ isset($customer)?$customer->latitude:old('latitude')}}">
+                            <input type="hidden" name="longitude" id="longitude" value="{{ isset($customer)?$customer->longitude:old('longitude')}}">
+                            <input type="hidden" name="location_name" id="location_name" value="{{ isset($customer)?$customer->location_name:old('location_name')}}">
+
+                            <!-- Map -->
+                            <div class="mb-3 d-none" id="map" style="height: 300px; width: 100%; margin-top: 10px;"></div>
+                        </div>
+
+                        <div class="col-sm-12 d-none mb-3 position-relative" id="kitchenContainer">
+                            <label for="kitchen_id" class="form-label">Nearest Kitchen <span class="text-danger">*</span></label>
+                            <select id="kitchen_id" name="kitchen_id" class="form-control">
+                                <option value="{{ isset($customer)&&(!empty($customer->kitchen))?$customer->kitchen->id : '' }}" selected>{{ isset($customer)&&(!empty($customer->kitchen))? $customer->kitchen->name : '' }}</option>
+                            </select>
+                            <small id="kitchenMessage" class="text-danger d-none">No nearby kitchen found.</small>
+                        </div>
+                    @endif
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Language Preferance</span>
+                </div>
+                <div class="card-body row g-3">
+                    <div class="col-md-6">
+                        <label for="language" class="form-label">Select Language</label>
+                        <select name="language" class="form-control">
+                            <option value="en" {{ $customer->language === 'en' ? 'selected' : '' }}>English</option>
+                            <option value="ml" {{ $customer->language === 'ml' ? 'selected' : '' }}>മലയാളം</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -201,21 +250,28 @@
 <div id="cropModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
     <div style="background:#fff; padding:20px; border-radius:8px; max-width:90%; max-height:90%; overflow:auto; position:relative; width:100%; max-width:500px;">
 
-        <!-- Button Row (Flexbox) -->
-        <div style="display:flex; justify-content:space-between; gap:10px; position:absolute; top:10px; left:10px; right:10px; z-index:10;">
-            <button id="closeCropModal" class="btn btn-danger w-100">Close</button>
-            <button id="resetButton" class="btn btn-warning w-100">Reset</button>
-            <button id="cropButton" class="btn btn-success w-100">Crop</button>
+        <!-- Button Row -->
+        <div class="crop-button-row-left">
+            <button id="closeCropModal" class="btn btn-danger">
+                <i class="bi bi-x-lg"></i> Close
+            </button>
+            <button id="resetButton" class="btn btn-warning">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+            <button id="cropButton" class="btn btn-success">
+                <i class="bi bi-scissors"></i> Crop
+            </button>
         </div>
 
         <!-- Image Preview -->
-        <img id="imagePreview" style="max-width:100%; display:block; margin:0 auto; margin-top:70px;">
+        <img id="imagePreview" style="max-width:100%; display:block; margin:0 auto; margin-top:90px;">
     </div>
 </div>
 
 @endsection
 
 @push('style')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         .flash-message {
             position: fixed;
@@ -239,6 +295,44 @@
             0% { opacity: 1; }
             80% { opacity: 1; }
             100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .crop-button-row-left {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        .crop-button-row-left button {
+            width: 110px;      /* Slightly wider for icon + text */
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            gap: 6px;          /* spacing between icon and text */
+            padding: 6px 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .crop-button-row-left button i {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        @media (max-width: 576px) {
+            .crop-button-row-left {
+                flex-direction: column;
+            }
+
+            .crop-button-row-left button {
+                width: 100%;     /* Full width on mobile */
+                max-width: 220px;
+                justify-content: center;
+            }
         }
     </style>
     <!-- Cropper CSS -->
@@ -316,7 +410,7 @@
         });
 
         // Optional: Remove uploaded image logic
-        document.getElementById('removeImageBtn')?.addEventListener('click', function () {
+        document.getElementById('changeImageBtn')?.addEventListener('click', function () {
             document.querySelector('input[name="isImageDelete"]').value = '1';
             document.getElementById('imageContainer').style.display = 'none';
             document.getElementById('fileContainer').style.display = 'block';
@@ -350,6 +444,145 @@
             }
         });
     </script>
+@if (empty($customer->kitchen) || empty($customer->location_name))
+    <script>
+        function fetchNearbyKitchens(lat, lng) {
+            $.ajax({
+                url: '{{ route("get.nearby.kitchens") }}',
+                method: 'GET',
+                data: { latitude: lat, longitude: lng },
+                success: function (data) {
+                    const dropdown = $('#kitchen_id');
+                    const message = $('#kitchenMessage');
+                    dropdown.empty();
+
+                    if (data.length > 0) {
+                        dropdown.append('<option value="">Select Kitchen</option>');
+                        data.forEach(function (kitchen, index) {
+                            dropdown.append(
+                                `<option value="${kitchen.encrypted_id}" ${index === 0 ? 'selected' : ''}>
+                                    ${kitchen.name} (${kitchen.distance.toFixed(2)} km)
+                                </option>`
+                            );
+                        });
+                        dropdown.prop('disabled', false);
+                    } else {
+                        dropdown.append('<option value="">No kitchen found</option>');
+                        dropdown.prop('disabled', true);
+                    }
+                },
+                error: function (e) {
+                    console.log(e);
+                    alert('Unable to fetch nearby kitchens. Please try again.');
+                }
+            });
+        }
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlsEVjPfChYExnraJoKmt7aG7ItrPZ9TA&libraries=places"></script>
+    <script>
+        let map, marker;
+
+        function initAutocomplete() {
+        let input = document.getElementById('autocomplete');
+        let autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.setFields(['geometry', 'formatted_address']);
+
+        const defaultLat = 10.8505;  // Fallback default
+        const defaultLng = 76.2711;
+        const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
+        const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
+
+        // Initialize map
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: lat, lng: lng },
+            zoom: (lat !== defaultLat && lng !== defaultLng) ? 15 : 10
+        });
+
+        // Initialize marker
+        marker = new google.maps.Marker({
+            map: map,
+            position: { lat: lat, lng: lng },
+            draggable: true
+        });
+
+        // Update fields when marker is dragged
+        marker.addListener('dragend', function () {
+            const position = marker.getPosition();
+            document.getElementById('latitude').value = position.lat();
+            document.getElementById('longitude').value = position.lng();
+
+            const geocoder = new google.maps.Geocoder();
+            const lat = position.lat();
+            const lng = position.lng();
+            geocoder.geocode({ location: position }, function (results, status) {
+                if (status === 'OK' && results[0]) {
+                    document.getElementById('location_name').value = results[0].formatted_address;
+                    document.getElementById('autocomplete').value = results[0].formatted_address;
+                    fetchNearbyKitchens(parseFloat(lat), parseFloat(lng));
+                }
+            });
+        });
+
+        // Handle autocomplete selection
+        autocomplete.addListener('place_changed', function () {
+            $('#map').removeClass('d-none');
+            $('#kitchenContainer').removeClass('d-none');
+            const place = autocomplete.getPlace();
+            if (!place.geometry) return;
+
+            const location = place.geometry.location;
+            map.setCenter(location);
+            map.setZoom(15);
+            marker.setPosition(location);
+
+            const lat = location.lat();
+            const lng = location.lng();
+
+            $('#latitude').val(lat);
+            $('#longitude').val(lng);
+            $('#location_name').val(place.formatted_address);
+
+            fetchNearbyKitchens(parseFloat(lat), parseFloat(lng));
+
+        });
+    }
+
+        // Don't use this anymore:
+        // google.maps.event.addDomListener(window, 'load', initAutocomplete);
+
+    function getCurrentLocation() {
+        $('#map').removeClass('d-none');
+        $('#kitchenContainer').removeClass('d-none');
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                const latlng = new google.maps.LatLng(lat, lng);
+                const geocoder = new google.maps.Geocoder();
+
+                geocoder.geocode({ location: latlng }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        document.getElementById('autocomplete').value = results[0].formatted_address;
+                        document.getElementById('latitude').value = lat;
+                        document.getElementById('longitude').value = lng;
+                        document.getElementById('location_name').value = results[0].formatted_address;
+
+                        map.setCenter(latlng);
+                        map.setZoom(15);
+                        marker.setPosition(latlng);
+                        fetchNearbyKitchens(parseFloat(lat), parseFloat(lng));
+                    }
+                });
+            });
+
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+    </script>
+@endif
     <script>
         // function getDistrict(stateId, selectedDistrictId = 0) {
         //     if (!stateId) return;
@@ -375,6 +608,11 @@
                             scrollTop: $profileForm.offset().top - 100
                         }, 400);
                         $('#name').focus();
+
+                        // Reinitialize Google Map
+                        setTimeout(function () {
+                            initAutocomplete();
+                        }, 200); // small delay to allow DOM visibility
                     });
                 });
             });
@@ -396,7 +634,7 @@
                 });
             });
 
-            $('#removeImageBtn').click(function() {
+            $('#changeImageBtn').click(function() {
                 $('#imageContainer').slideUp(200);
                 $('#fileContainer').slideDown(200);
                 $('input[name="isImageDelete"]').val(1);
@@ -428,7 +666,7 @@
             // });
 
 
-            AJAX profile update
+            // AJAX profile update
             $('#updateProfileForm').on('submit', function (e) {
                 e.preventDefault();
 
@@ -454,7 +692,8 @@
                         // Switch back to view mode
                         $('#profileView').show();
                         $('#profileForm').hide();
-                        location.reload(); // or refresh only part of the profile if you want
+                        // location.reload(); // or refresh only part of the profile if you want
+                        window.location.href = '{{ route("customer.profile") }}';
                     },
                     error: function (xhr) {
                         $('.flash-message').remove();
@@ -490,11 +729,12 @@
                 document.getElementById('profileView').style.display = 'none';
                 // Optional: scroll into view
                 document.getElementById('profileForm').scrollIntoView({ behavior: 'smooth' });
+                google.maps.event.addDomListener(window, 'load', initAutocomplete);
             }
         });
     </script>
 
-    @if (session('success'))
+@if (session('success'))
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         Swal.fire({
@@ -508,4 +748,6 @@
         });
     </script>
 @endif
+
+
 @endpush

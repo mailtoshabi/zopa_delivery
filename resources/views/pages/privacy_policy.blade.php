@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Privacy Policy - Zopa Food Drop')
+@section('title', 'Privacy Policy - ' . config('app.name'))
 
 @section('content')
 <div class="container mt-5">
@@ -10,7 +10,7 @@
         </h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
-    <p class="text-center text-muted mt-3">Your privacy is important to us at Zopa Food Drop</p>
+    <p class="text-center text-muted mt-3">Your privacy is important to us at @appName</p>
 
     <section class="mb-5">
         <h3>1. Information We Collect</h3>

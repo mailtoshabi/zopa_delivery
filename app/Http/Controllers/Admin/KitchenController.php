@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 
 class KitchenController extends Controller
 {
@@ -38,16 +39,35 @@ class KitchenController extends Controller
      */
     public function store(KitchenStoreRequest $request)
     {
-        $input = $request->except(['_token', 'image', 'isImageDelete']);
+        $input = $request->except(['_token', 'image', 'isImageDelete' , 'isLicenseDelete', 'isfssai_certificateDelete','isother_documentsDelete']);
 
         if ($request->hasFile('image')) {
             $input['image_filename'] = $this->handleImageUpload($request, $request->name);
         }
 
         $input['user_id'] = Auth::id();
+        $input['latitude'] = $request->latitude;
+        $input['longitude'] = $request->longitude;
+        $input['location_name'] = $request->location_name;
+        $input['password'] = Hash::make($request->password);
+        $input['status'] = Utility::ITEM_ACTIVE;
+        // $input['is_approved'] = Utility::ITEM_ACTIVE;
 
-        Kitchen::create($input);
+        $kitchen = Kitchen::create($input);
 
+        // Single documents
+        if ($request->hasFile('license_file')) {
+            $kitchen->license_file = $this->handleDocumentUpload($request, 'license_file', Kitchen::DIR_PUBLIC_LICESNSE, $kitchen->name);
+        }
+        if ($request->hasFile('fssai_certificate')) {
+            $kitchen->fssai_certificate = $this->handleDocumentUpload($request, 'fssai_certificate', Kitchen::DIR_PUBLIC_FSSAI, $kitchen->name);
+        }
+        // Multiple documents
+        if ($request->hasFile('other_documents')) {
+            $docs = $this->handleMultipleDocumentUpload($request, 'other_documents', Kitchen::DIR_PUBLIC_OTHDOC, $kitchen->name);
+            $kitchen->other_documents = json_encode($docs);
+        }
+        $kitchen->save();
         return redirect()->route('admin.kitchens.index')->with(['success' => 'New Kitchen Added Successfully']);
     }
 
@@ -78,7 +98,11 @@ class KitchenController extends Controller
         $id = decrypt($id);
         $kitchen = Kitchen::findOrFail($id);
 
-        $input = $request->except(['_token', '_method', 'kitchen_id', 'image', 'isImageDelete']);
+        $input = $request->except(['_token', '_method', 'kitchen_id', 'image', 'isImageDelete', 'isLicenseDelete', 'isfssai_certificateDelete','isother_documentsDelete']);
+
+        if ($request->password) {
+            $input['password'] = Hash::make($request->password);
+        }
 
         if ($request->isImageDelete == 1 && $kitchen->image_filename) {
             $kitchen->deleteImage();
@@ -90,7 +114,25 @@ class KitchenController extends Controller
             $input['image_filename'] = $this->handleImageUpload($request, $request->name);
         }
 
+        $input['latitude'] = $request->latitude;
+        $input['longitude'] = $request->longitude;
+        $input['location_name'] = $request->location_name;
+
         $kitchen->update($input);
+
+        // Single documents
+        if ($request->hasFile('license_file')) {
+            $kitchen->license_file = $this->handleDocumentUpload($request, 'license_file', Kitchen::DIR_PUBLIC_LICESNSE, $kitchen->name);
+        }
+        if ($request->hasFile('fssai_certificate')) {
+            $kitchen->fssai_certificate = $this->handleDocumentUpload($request, 'fssai_certificate', Kitchen::DIR_PUBLIC_FSSAI, $kitchen->name);
+        }
+        // Multiple documents
+        if ($request->hasFile('other_documents')) {
+            $docs = $this->handleMultipleDocumentUpload($request, 'other_documents', Kitchen::DIR_PUBLIC_OTHDOC, $kitchen->name);
+            $kitchen->other_documents = json_encode($docs);
+        }
+        $kitchen->save();
 
         return redirect()->route('admin.kitchens.index')->with(['success' => 'Kitchen Updated Successfully']);
     }
@@ -132,4 +174,28 @@ class KitchenController extends Controller
         $request->image->storeAs(Kitchen::DIR_PUBLIC, $fileName);
         return $fileName;
     }
+
+    private function handleDocumentUpload(Request $request, string $inputName, string $storageFolder, string $baseName = null): string
+    {
+        $extension = $request->file($inputName)->extension();
+        $fileName = Utility::generateFileName($baseName ?? $inputName, $extension);
+        $request->file($inputName)->storeAs($storageFolder, $fileName);
+        return $fileName;
+    }
+
+    private function handleMultipleDocumentUpload(Request $request, string $inputName, string $storageFolder, string $baseName = null): array
+    {
+        $fileNames = [];
+
+        foreach ($request->file($inputName) as $index => $file) {
+            $extension = $file->extension();
+            $generatedName = Utility::generateFileName(($baseName ?? $inputName) . '_' . $index, $extension);
+            $file->storeAs($storageFolder, $generatedName);
+            $fileNames[] = $generatedName;
+        }
+
+        return $fileNames;
+    }
+
+
 }

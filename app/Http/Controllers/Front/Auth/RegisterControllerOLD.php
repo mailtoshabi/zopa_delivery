@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Kreait\Firebase\Auth as FirebaseAuth;
 use Kreait\Firebase\Exception\Auth\FailedToVerifyToken;
 
-class RegisterController extends Controller
+class RegisterControllerOLD extends Controller
 {
     /**
      * Show the registration form.

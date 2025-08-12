@@ -1,13 +1,13 @@
 @extends('layouts.out')
 
-@section('title', 'Login - Zopa Food Drop')
+@section('title', 'Login - ' . config('app.name'))
 
 @section('content')
 <div class="container d-flex align-items-center justify-content-center min-vh-100 py-4">
     <div class="card shadow" style="width: 100%; max-width: 400px;">
         <div class="card-body">
             <div class="text-center mb-4 logo_bg pb-4 pt-4">
-                <a href="{{ route('index') }}"><img src="{{ asset('front/images/logo.png') }}" alt="Zopa Food Drop" style="height: 100px; max-width: 100%;"></a>
+                <a href="{{ route('index') }}"><img src="{{ asset('front/images/logo.png') }}" alt="@appName" style="height: 100px; max-width: 100%;"></a>
             </div>
             <h4 class="card-title text-center mb-4">Login</h4>
 

@@ -35,6 +35,7 @@ return new class extends Migration
             $table->boolean('is_approved')->comment('1-Approved 0-Unapporved')->default(0);
             $table->foreignId('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->string('language', 5)->default('en');
             $table->rememberToken()->nullable();
             $table->timestamps();
         });

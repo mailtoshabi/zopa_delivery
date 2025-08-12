@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Feedbacks - Zopa Food Drop')
+@section('title', 'Feedbacks - ' . config('app.name'))
 
 @section('content')
 <div class="container my-2">

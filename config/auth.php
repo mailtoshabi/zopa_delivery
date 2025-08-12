@@ -44,6 +44,11 @@ return [
             'driver' => 'session',
             'provider' => 'customers',
         ],
+
+        'kitchen' => [
+            'driver' => 'session',
+            'provider' => 'kitchens',
+        ],
     ],
 
     /*
@@ -72,6 +77,11 @@ return [
         'customers' => [
             'driver' => 'eloquent',
             'model' => App\Models\Customer::class,
+        ],
+
+        'kitchens' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Kitchen::class,
         ],
 
         // 'users' => [

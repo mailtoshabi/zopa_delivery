@@ -25,11 +25,16 @@ class KitchenUpdateRequest extends FormRequest
 
         return [
             'name' => 'required',
-            'phone' => 'required|string|max:10|min:10|unique:kitchens,phone,' . $id,
-            'whatsapp' => 'nullable|string|max:10|min:10|unique:kitchens,whatsapp,' . $id,
+            'phone' => 'required|regex:/^[0-9]{10}$/|unique:kitchens,phone,' . $id,
+            'whatsapp' => 'required|regex:/^[0-9]{10}$/|unique:kitchens,whatsapp,' . $id,
             'city' => 'required',
             'district_id' => 'required',
             'state_id' => 'required',
+            'latitude'         => 'required',
+            'longitude'         => 'required',
+            'location_name'         => 'required',
+            'email'         => 'required|email|unique:kitchens,email,' . $id,
+            'password' => 'nullable|min:6',
         ];
     }
 }

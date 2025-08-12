@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Http\Utilities\Utility;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -43,12 +45,16 @@ class Customer extends Authenticatable
         'postal_code',
         'image_filename',
         'whatsapp',
+        'type',
+        'daily_quantity',
         'kitchen_id',
         'status',
         'is_approved',
-        'otp_code',
-        'otp_expires_at',
+        'latitude',
+        'longitude',
+        'location_name',
         'firebase_uid',
+        'language',
         'user_id',
     ];
 
@@ -116,6 +122,26 @@ class Customer extends Authenticatable
         if ($this->image_filename && Storage::exists(self::DIR_PUBLIC . '/' . $this->image_filename)) {
             Storage::delete(self::DIR_PUBLIC . '/' . $this->image_filename);
         }
+    }
+
+    public function dailyQuantityOverrides()
+    {
+        return $this->hasMany(DailyQuantityOverride::class);
+    }
+
+    public function getTodayQuantity()
+    {
+        $override = $this->dailyQuantityOverrides()->where('date', today())->first();
+        return $override ? $override->quantity : $this->daily_quantity;
+    }
+
+    public function getCutoffTimeAttribute()
+    {
+        // Use kitchen-specific cutoff time if available, else default constant
+        $time = $this->kitchen?->cutoff_time ?? Utility::CUTOFF_TIME;
+
+        // Ensure it returns in H:i format
+        return $time ? Carbon::createFromFormat('H:i:s', $time)->format('H:i') : null;
     }
 
 }

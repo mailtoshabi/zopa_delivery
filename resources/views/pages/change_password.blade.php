@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Change Password')
+@section('title', 'Change Password - ' . config('app.name'))
 
 @section('content')
 <div class="container my-4">

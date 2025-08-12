@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained()->onDelete('cascade');
             $table->integer('quantity')->default(0);
             $table->boolean('status')->comment('1-Active 0-Suspended')->default(1);
+            $table->boolean('is_on')->comment('1-default 0-public')->default(0); //
             $table->timestamps();
         });
     }

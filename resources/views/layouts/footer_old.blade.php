@@ -18,7 +18,7 @@
             </div>
             <div class="row mt-2">
                 <div class="col-md-12">
-                    <p class="mb-0 d-md-inline">All rights reserved Zopa Food Drop</p>
+                    <p class="mb-0 d-md-inline">All rights reserved @appName</p>
                     <span class="d-none d-md-inline"> | </span>
                     <p class="mb-0 d-md-inline">Powered by <a href="https://webmahal.com" target="_blank" class="powered" >Web Mahal</a></p>
                 </div>
@@ -28,7 +28,12 @@
 
     @php
         use App\Http\Utilities\Utility;
-        $lastOrderTime = Utility::CUTOFF_TIME;
+
+        if(auth('customer')->check()) {
+            $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(auth('customer')->user()->cutoff_time); // From accessor
+        } else {
+            $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME);
+        }
     @endphp
 
     <!-- Required JS -->
@@ -254,7 +259,7 @@
       </div>
 
       <div class="modal-body text-center">
-        <img src="{{ asset('front/images/logo_red.png') }}" alt="Zopa Food Drop" width="80" class="mb-3">
+        <img src="{{ asset('front/images/logo_red.png') }}" alt="@appName" width="80" class="mb-3">
         <p>Get a faster, smoother Zopa experience right on your phone — install our app now!</p>
       </div>
 

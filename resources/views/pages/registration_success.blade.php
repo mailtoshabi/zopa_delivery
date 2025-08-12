@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Registration Successful - Zopa Food Drop')
+@section('title', 'Registration Successful - ' . config('app.name'))
 
 @section('content')
 <div class="container my-2">
@@ -12,7 +12,7 @@
     </div>
 
     <div class="alert alert-success text-center">
-        <h4>Welcome to Zopa Food Drop!</h4>
+        <h4>Welcome to @appName!</h4>
         <p class="mt-3">Your account has been created successfully. You can now browse and buy meal plans tailored to your taste and schedule.</p>
     </div>
 

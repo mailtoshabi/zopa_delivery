@@ -36,22 +36,20 @@ class CustomerOrderController extends Controller
         return redirect()->route('admin.orders.index')->with(['success' => 'Status changed Successfully']);
     }
 
-    public function activate($id)
+    public function activate($id, $is_paid = null)
     {
         $customer_order = CustomerOrder::findOrFail(decrypt($id));
 
         if ($customer_order->status == Utility::ITEM_INACTIVE) {
-            // 1️⃣ Activate and mark paid
             $customer_order->update([
                 'status' => Utility::ITEM_ACTIVE,
-                'is_paid' => Utility::ITEM_ACTIVE,
+                'is_paid' => $is_paid == 'paid' ? Utility::ITEM_ACTIVE : Utility::ITEM_INACTIVE,
             ]);
 
-            // 2️⃣ Process Meals → MealWallet (only if meals exist)
-            $this->processMeals($customer_order);
-
-            // 3️⃣ Process Addons → AddonWallet (only if addons exist)
-            $this->processAddons($customer_order);
+            $this->creditToMealWallet($customer_order);
+            $this->creditToAddonWallet($customer_order);
+        }else {
+            abort(404);
         }
 
         return redirect()->route('admin.orders.index')->with([
@@ -59,23 +57,58 @@ class CustomerOrderController extends Controller
         ]);
     }
 
-    private function processMeals(CustomerOrder $customer_order)
+    private function creditToMealWallet(CustomerOrder $order)
     {
-        if ($customer_order->meals && $customer_order->meals->isNotEmpty()) {
-            // Directly sum the quantity column of CustomerMeal models
-            $total_meal_quantity = $customer_order->meals->sum('quantity');
+        if ($order->meals && $order->meals->isNotEmpty()) {
+            // Group meals by wallet_group_id
+            $customerId = $order->customer_id;
 
-            if ($total_meal_quantity > 0) {
-                $meal_wallet = MealWallet::firstOrNew(['customer_id' => $customer_order->customer_id]);
+            // Group purchased meals by wallet_group_id and sum their quantities
+            $groupedQuantities = [];
 
-                $meal_wallet->quantity = ($meal_wallet->quantity ?? 0) + $total_meal_quantity;
-                $meal_wallet->status = Utility::ITEM_ACTIVE;
-                $meal_wallet->save();
+            foreach ($order->meals as $customerMeal) {
+                $meal = $customerMeal->meal;
+
+                if (!$meal || !$meal->wallet_group_id) {
+                    continue; // Skip if meal or wallet_group is not set
+                }
+
+                $walletGroupId = $meal->wallet_group_id;
+                $quantity = $customerMeal->quantity;
+
+                if (!isset($groupedQuantities[$walletGroupId])) {
+                    $groupedQuantities[$walletGroupId] = 0;
+                }
+
+                $groupedQuantities[$walletGroupId] += $quantity;
+            }
+
+            // Update or create entries in meal_wallet
+            foreach ($groupedQuantities as $walletGroupId => $quantity) {
+                $wallet = MealWallet::where('customer_id', $customerId)
+                    ->where('wallet_group_id', $walletGroupId)
+                    ->first();
+
+                if ($wallet) {
+                    $wallet->increment('quantity', $quantity);
+                } else {
+                    // Check if any other wallet of the customer is already active (is_on = 1)
+                    $hasActiveWallet = MealWallet::where('customer_id', $customerId)
+                        ->where('is_on', 1)
+                        ->exists();
+                    MealWallet::create([
+                        'customer_id' => $customerId,
+                        'wallet_group_id' => $walletGroupId,
+                        'quantity' => $quantity,
+                        'status' => 1,
+                        'is_on'           => $hasActiveWallet ? 0 : 1, // set is_on=1 only if none exists
+                    ]);
+                }
             }
         }
     }
 
-    private function processAddons(CustomerOrder $customer_order)
+    private function creditToAddonWallet(CustomerOrder $customer_order)
     {
         if ($customer_order->addons && $customer_order->addons->isNotEmpty()) {
             foreach ($customer_order->addons as $addonItem) {

@@ -59,6 +59,30 @@ if (!function_exists('distric_list')) {
     }
 }
 
+if (!function_exists('get_postal_code')) {
+    function get_postal_code($lat, $lng)
+    {
+        $url = "https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json";
+
+        $options = [
+            'http' => [
+                'header' => "User-Agent: ZopaFoodDrop/1.0 (+http://127.0.0.1:8000)\r\n"
+            ]
+        ];
+
+        $context = stream_context_create($options);
+        $response = file_get_contents($url, false, $context);
+
+        if ($response !== false) {
+            $data = json_decode($response, true);
+            return $data['address']['postcode'] ?? null;
+        }
+
+        return null;
+    }
+}
+
+
 
 
 

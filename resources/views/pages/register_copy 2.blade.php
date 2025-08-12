@@ -1,13 +1,13 @@
 @extends('layouts.out')
 
-@section('title', 'Signup - Zopa Food Drop')
+@section('title', 'Signup - ' . config('app.name'))
 
 @section('content')
 <div class="container d-flex align-items-center justify-content-center py-4">
     <div class="card shadow overflow-auto" style="width: 100%; max-width: 400px;">
         <div class="card-body">
             <div class="text-center mb-4 logo_bg pb-4 pt-4">
-                <a href="{{ route('index') }}"><img src="{{ asset('front/images/logo.png') }}" alt="Zopa Food Drop" style="height: 100px; max-width: 100%;"></a>
+                <a href="{{ route('index') }}"><img src="{{ asset('front/images/logo.png') }}" alt="@appName" style="height: 100px; max-width: 100%;"></a>
             </div>
             <h4 class="card-title text-center mb-4">Signup</h4>
             @if ($errors->any())
@@ -111,6 +111,18 @@
                         @endforeach
                     </select>
                     <i class="fa fa-cutlery input-icon"></i>
+                </div>
+
+                {{-- <div class="form-group mb-3">
+                    <select id="customer_type" name="customer_type" class="form-control">
+                        <option value="{{ Utility::CUSTOMER_TYPE_IND }}">Customer Type: Individual</option>
+                        <option value="{{ Utility::CUSTOMER_TYPE_INST }}">Customer Type: Institution</option>
+                    </select>
+                </div> --}}
+
+                <div class="form-group mb-3 position-relative" id="daily_quantity_group" style="display:none;">
+                    <input type="number" min="1" class="form-control pe-5" name="daily_quantity" id="daily_quantity" placeholder="Min. Daily Meal Quantity" value="{{ old('daily_quantity') }}">
+                    <i class="fa fa-envelope input-icon"></i>
                 </div>
 
                 <button type="submit" class="btn btn-zopa w-100">Signup</button>

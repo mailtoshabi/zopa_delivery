@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('value')->nullable();
             $table->timestamps();
         });
-        Settings::create(['term'=>'company_name', 'value'=>'Zopa Food Drop']);
-        Settings::create(['term'=>'trade_name', 'value'=>'Zopa Food Drop']);
+        Settings::create(['term'=>'company_name', 'value'=>config('app.name')]);
+        Settings::create(['term'=>'trade_name', 'value'=>config('app.name')]);
         Settings::create(['term'=>'email', 'value'=>'zopafood@gmail.com']);
         Settings::create(['term'=>'phone', 'value'=>'8089552553']);
         Settings::create(['term'=>'address1', 'value'=>'10/363, Chundakkadan Building']);

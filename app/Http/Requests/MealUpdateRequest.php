@@ -16,9 +16,10 @@ class MealUpdateRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'quantity' => 'required|numeric',
+            'quantity' => 'required|numeric|min:1',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'order' => 'nullable|integer',
+            'category_id' => 'required|exists:categories,id',
         ];
     }
 }

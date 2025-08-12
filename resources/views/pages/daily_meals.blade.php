@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Daily Meals - Zopa Food Drop')
+@section('title', __('messages.menu.daily_meals') . ' - ' . config('app.name'))
 
 @section('content')
 <style>
@@ -21,20 +21,22 @@
 <div class="container my-2">
     <x-flash-messages />
 
-    @if(isset($mealsLeft))
-        <div class="alert alert-info d-flex justify-content-between align-items-center mt-4 mb-4">
-            <div>
-                <i class="bi bi-wallet2 me-2"></i>
-                <strong>Meal Balance:</strong> {{ $mealsLeft }} No{{ $mealsLeft == 1 ? '' : 's' }}.
+    @if(isset($mealsLeft) && $mealsLeft<0)
+        @foreach ($meal_wallets as $meal_wallet)
+            <div class="alert alert-info d-flex justify-content-between align-items-center mt-2 mb-2">
+                <div>
+                    <i class="bi bi-wallet2 me-2"></i>
+                    {{ $meal_wallet->quantity }} <strong>{{ $meal_wallet->walletGroup->display_name }} </strong> left.
+                </div>
+                <a href="{{ route('front.meal.plan') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fa-solid fa-plus"></i> Top Up
+                </a>
             </div>
-            <a href="{{ route('front.meal.plan') }}" class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-plus"></i> Top Up
-            </a>
-        </div>
+        @endforeach
     @endif
-    <div class="text-center mb-4">
+    <div class="text-center mt-4 mb-4">
         <h2 class="position-relative d-inline-block px-4 py-2">
-            Daily Meals
+            {{ __('messages.menu.daily_meals') }}
         </h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
@@ -65,16 +67,27 @@
                 @if($hasLeaveToday)
                     <div class="alert alert-danger d-flex justify-content-between align-items-center">
                         <div>
-                            <strong>Day Off:</strong> You’re on leave today, so no daily meal will be delivered.
+                            <strong>Day Off:</strong> You’re on leave today, so no meal will be delivered today.
                         </div>
                     </div>
                 @else
-                    @if($mealsLeft>0)
-                        <div class="alert alert-success d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>Waiting for Update:</strong> Your daily meal is being processed and will be updated shortly.
+                    @if(isset($mealsLeft) && $mealsLeft>0)
+                        @if($default_wallet->status)
+                            <div class="alert alert-success d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Waiting for Update:</strong> {{ __('messages.menu.daily_meals') }} is being processed and will be updated here shortly.
+                                </div>
                             </div>
-                        </div>
+                        @else
+                            <div class="alert alert-danger d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Suspended Wallet:</strong> Your Wallet is seems to be deactivated!!
+                                </div>
+                                <a href="{{ route('support') }}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fa-solid fa-headset"></i> Contact Support
+                                </a>
+                            </div>
+                        @endif
                     @else
                         <div class="alert alert-danger d-flex justify-content-between align-items-center">
                             <div>

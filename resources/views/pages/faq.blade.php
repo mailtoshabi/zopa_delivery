@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Frequently Asked Questions - Zopa Food Drop')
+@section('title', 'Frequently Asked Questions - ' . config('app.name'))
 
 @section('content')
 <div class="container mt-5">
@@ -11,19 +11,19 @@
         </h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
-    <p class="text-center text-muted mt-3">Find answers to common questions about Zopa Food Drop</p>
+    <p class="text-center text-muted mt-3">Find answers to common questions about @appName</p>
 
     <div class="accordion" id="faqAccordion">
 
         <div class="accordion-item">
             <h2 class="accordion-header" id="headingOne">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                    What is Zopa Food Drop?
+                    What is @appName?
                 </button>
             </h2>
             <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
                 <div class="accordion-body">
-                    Zopa Food Drop is a home-cooked meal delivery service that brings fresh, healthy, and delicious meals straight to your doorstep. Our meals are prepared in hygienic kitchens with locally sourced ingredients.
+                    @appName is a home-cooked meal delivery service that brings fresh, healthy, and delicious meals straight to your doorstep. Our meals are prepared in hygienic kitchens with locally sourced ingredients.
                 </div>
             </div>
         </div>

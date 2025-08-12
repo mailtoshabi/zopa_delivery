@@ -1,6 +1,6 @@
 @extends('layouts.out')
 
-@section('title', 'Signup - Zopa Food Drop')
+@section('title', 'Signup - ' . config('app.name'))
 
 @section('content')
 <div class="container d-flex align-items-center justify-content-center py-4">
@@ -8,7 +8,7 @@
         <div class="card-body">
             <div class="text-center mb-4 logo_bg pb-4 pt-4">
                 <a href="{{ route('index') }}">
-                    <img src="{{ asset('front/images/logo.png') }}" alt="Zopa Food Drop" style="height: 100px; max-width: 100%;">
+                    <img src="{{ asset('front/images/logo.png') }}" alt="@appName" style="height: 100px; max-width: 100%;">
                 </a>
             </div>
             <h4 class="card-title text-center mb-4">Signup</h4>
@@ -61,11 +61,6 @@
                     </div>
                 </div>
 
-                {{-- <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="whatsapp" id="whatsapp" placeholder="WhatsApp Number" value="{{ old('whatsapp') }}">
-                    <i class="fab fa-whatsapp input-icon"></i>
-                </div> --}}
-
                 <div class="mb-3 position-relative has-tooltip">
                     <input type="password" class="form-control pe-5" name="password" placeholder="Password" value="">
                     <i class="fa fa-lock input-icon"></i>
@@ -74,69 +69,35 @@
                     </button>
                 </div>
 
-                {{-- Office / Delivery Information --}}
-                {{--                 <hr>
-
-                <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="office_name" id="office_name" placeholder="Shop/Office Name" value="{{ old('office_name') }}">
-                    <i class="fa fa-building input-icon"></i>
-                </div>
-
-                <div class="mb-3 position-relative has-tooltip">
-                    <input type="text" class="form-control pe-5" name="city" id="city" placeholder="Shop/Office Location" value="{{ old('city') }}">
-                    <i class="fa fa-map-marker input-icon"></i>
-                    <button type="button" class="input-tooltip-btn" data-bs-toggle="tooltip" title="Meals delivered Here">
-                        <i class="fa fa-info-circle text-primary"></i>
+                <!-- Input group for input + tooltip button -->
+                <div class="input-group mb-2">
+                    <input type="text" id="autocomplete" placeholder="Enter location" class="form-control" value="{{ isset($customer)?$customer->location_name:old('location_name')}}">
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        onclick="getCurrentLocation()"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="left"
+                        title="Use current location">
+                        📍
                     </button>
+                    @error('location_name') <div class="text-danger small">{{ $message }}</div> @enderror
                 </div>
 
-                <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="landmark" placeholder="Landmark" value="{{ old('landmark') }}">
-                    <i class="fa fa-location-arrow input-icon"></i>
-                </div>
+                <!-- Hidden fields -->
+                <input type="hidden" name="latitude" id="latitude" value="{{ isset($customer)?$customer->latitude:old('latitude')}}">
+                <input type="hidden" name="longitude" id="longitude" value="{{ isset($customer)?$customer->longitude:old('longitude')}}">
+                <input type="hidden" name="location_name" id="location_name" value="{{ isset($customer)?$customer->location_name:old('location_name')}}">
+                <!-- Map -->
+                <div class="mb-3 d-none" id="map" style="height: 300px; width: 100%; margin-top: 10px;"></div>
 
-                <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="designation" id="designation" placeholder="Job Designation" value="{{ old('designation') }}">
-                    <i class="fa fa-briefcase input-icon"></i>
-                </div>
-
-                <div class="mb-3 position-relative">
-                    <input type="text" class="form-control pe-5" name="postal_code" id="postal_code" placeholder="Postal Code" value="{{ old('postal_code') }}">
-                    <i class="fa fa-envelope input-icon"></i>
-                </div> --}}
-
-                {{-- Uncomment if you want to enable state/district selection --}}
-                {{--
-                <div class="mb-3 position-relative">
-                    <select name="state_id" id="state_id" class="form-control select2 pe-5" onchange="getDistrict(this.value, 0);">
-                        <option value="" disabled selected>Select State</option>
-                        @foreach($states as $state)
-                            <option value="{{ $state->id }}" {{ $state->id == Utility::STATE_ID_KERALA ? 'selected' : '' }}>{{ $state->name }}</option>
-                        @endforeach
+                <div class="mb-3 d-none position-relative" id="kitchenContainer">
+                    <label for="kitchen_id" class="form-label">Nearest Kitchen <span class="text-danger">*</span></label>
+                    <select id="kitchen_id" name="kitchen_id" class="form-control">
+                        <option value="">Select Kitchen</option>
                     </select>
-                    <i class="fa fa-map input-icon"></i>
+                    <small id="kitchenMessage" class="text-danger d-none">No nearby kitchen found. Contact our <a href="{{ route('support') }}">Support</a></small>
                 </div>
-
-                <div class="mb-3 position-relative">
-                    <select name="district_id" id="district-list" class="form-control select2 pe-5">
-                        <option value="" disabled selected>Select District</option>
-                    </select>
-                    <i class="fa fa-map-pin input-icon"></i>
-                </div> --}}
-                {{-- Nearest Kitchen --}}
-                {{--                 <hr>
-
-                <div class="mb-3 position-relative">
-                    <select id="kitchen_id" name="kitchen_id" class="form-control select2 pe-5">
-                        <option value="" disabled selected>Select Nearest Zopa Kitchen</option>
-                        @foreach ($kitchens as $kitchen)
-                            <option value="{{ encrypt($kitchen->id) }}" {{ (old('kitchen_id') == encrypt($kitchen->id) || (Utility::KITCHEN_KDY == $kitchen->id && !old('kitchen_id'))) ? 'selected' : '' }}>
-                                {{ $kitchen->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <i class="fa fa-cutlery input-icon"></i>
-                </div> --}}
 
                 <button type="submit" id="verifyOtp" class="btn btn-zopa w-100">Verify OTP & Signup</button>
             </form>
@@ -350,21 +311,8 @@
     });
 </script>
 <script>
-    // function getDistrict(stateId, selectedDistrictId = 0) {
-    //     $.ajax({
-    //         type: 'POST',
-    //         url: "{{ route('get.districts') }}",
-    //         data: { s_id: stateId, d_id: selectedDistrictId, _token: '{{ csrf_token() }}' },
-    //         success: function(data) {
-    //             $('#district-list').html(data);
-    //         }
-    //     });
-    // }
 
     $(document).ready(function() {
-        // Load districts on page load
-        // getDistrict({{ Utility::STATE_ID_KERALA }}, 0);
-
         $('[data-bs-toggle="tooltip"]').tooltip();
 
         $('form#registerForm').on('submit', function(event) {
@@ -412,6 +360,17 @@
             if (!passwordPattern.test(passwordInput.val())) {
                 passwordInput.addClass("invalid");
                 isValid = false;
+            }
+
+            // ✅ Validate daily_quantity only if customer_type is institution
+            let customerType = form.find('[name="customer_type"]').val();
+            let dailyQtyInput = form.find('[name="daily_quantity"]');
+            if (customerType === '{{ Utility::CUSTOMER_TYPE_INST }}') {
+                let qty = dailyQtyInput.val();
+                if (!qty || isNaN(qty) || parseInt(qty) < 1) {
+                    dailyQtyInput.addClass("invalid");
+                    isValid = false;
+                }
             }
 
             const otp = $('#otp').val().trim();
@@ -482,6 +441,162 @@
             });
 
         });
+
+        form.find('input, select, textarea').on('input change', function () {
+            $(this).removeClass('invalid');
+        });
     });
+</script>
+
+<script>
+    $(document).ready(function() {
+        document.getElementById('customer_type').addEventListener('change', function () {
+            document.getElementById('daily_quantity_group').style.display =
+                this.value === '{{ Utility::CUSTOMER_TYPE_INST }}' ? 'block' : 'none';
+                document.getElementById('daily_quantity').focus();
+        });
+    });
+</script>
+
+<script>
+    function fetchNearbyKitchens(lat, lng) {
+        $.ajax({
+            url: '{{ route("get.nearby.kitchens") }}',
+            method: 'GET',
+            data: { latitude: lat, longitude: lng },
+            success: function (data) {
+                const dropdown = $('#kitchen_id');
+                const message = $('#kitchenMessage');
+                dropdown.empty();
+                console.log(data);
+                if (data.length > 0) {
+                    dropdown.append('<option value="">Select Kitchen</option>');
+                    data.forEach(function (kitchen, index) {
+                        dropdown.append(
+                            `<option value="${kitchen.encrypted_id}" ${index === 0 ? 'selected' : ''}>
+                                ${kitchen.display_name} (${kitchen.distance.toFixed(2)} km)
+                            </option>`
+                        );
+                    });
+                    dropdown.prop('disabled', false);
+                    message.addClass('d-none');
+                } else {
+                    dropdown.append('<option value="">No kitchen found</option>');
+                    dropdown.prop('disabled', true);
+                    message.removeClass('d-none');
+                }
+            },
+            error: function (e) {
+                console.log(e);
+                alert('Unable to fetch nearby kitchens. Please try again.');
+            }
+        });
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlsEVjPfChYExnraJoKmt7aG7ItrPZ9TA&libraries=places"></script>
+<script>
+    let map;
+    let marker;
+
+    function initAutocomplete() {
+        let input = document.getElementById('autocomplete');
+        let autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.setFields(['geometry', 'formatted_address']);
+
+        const defaultLat = 10.8505;  // Fallback default
+        const defaultLng = 76.2711;
+        const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
+        const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
+
+        // Initialize map
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: lat, lng: lng },
+            zoom: (lat !== defaultLat && lng !== defaultLng) ? 15 : 10
+        });
+
+        // Initialize marker
+        marker = new google.maps.Marker({
+            map: map,
+            position: { lat: lat, lng: lng },
+            draggable: true
+        });
+
+        // Update fields when marker is dragged
+        marker.addListener('dragend', function () {
+            const position = marker.getPosition();
+            document.getElementById('latitude').value = position.lat();
+            document.getElementById('longitude').value = position.lng();
+
+            const geocoder = new google.maps.Geocoder();
+            const lat = position.lat();
+            const lng = position.lng();
+            geocoder.geocode({ location: position }, function (results, status) {
+                if (status === 'OK' && results[0]) {
+                    document.getElementById('location_name').value = results[0].formatted_address;
+                    document.getElementById('autocomplete').value = results[0].formatted_address;
+                    fetchNearbyKitchens(parseFloat(lat), parseFloat(lng));
+                }
+            });
+        });
+
+        // Handle autocomplete selection
+        autocomplete.addListener('place_changed', function () {
+            $('#map').removeClass('d-none');
+            $('#kitchenContainer').removeClass('d-none');
+            const place = autocomplete.getPlace();
+            if (!place.geometry) return;
+
+            const location = place.geometry.location;
+            map.setCenter(location);
+            map.setZoom(15);
+            marker.setPosition(location);
+
+            const lat = location.lat();
+            const lng = location.lng();
+
+            $('#latitude').val(lat);
+            $('#longitude').val(lng);
+            $('#location_name').val(place.formatted_address);
+
+            fetchNearbyKitchens(parseFloat(lat), parseFloat(lng));
+
+        });
+    }
+
+    google.maps.event.addDomListener(window, 'load', initAutocomplete);
+
+
+
+    function getCurrentLocation() {
+        $('#map').removeClass('d-none');
+        $('#kitchenContainer').removeClass('d-none');
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                const latlng = new google.maps.LatLng(lat, lng);
+                const geocoder = new google.maps.Geocoder();
+
+                geocoder.geocode({ location: latlng }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        document.getElementById('autocomplete').value = results[0].formatted_address;
+                        document.getElementById('latitude').value = lat;
+                        document.getElementById('longitude').value = lng;
+                        document.getElementById('location_name').value = results[0].formatted_address;
+
+                        map.setCenter(latlng);
+                        map.setZoom(15);
+                        marker.setPosition(latlng);
+                        fetchNearbyKitchens(parseFloat(lat), parseFloat(lng));
+                    }
+                });
+            });
+
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
 </script>
 @endpush

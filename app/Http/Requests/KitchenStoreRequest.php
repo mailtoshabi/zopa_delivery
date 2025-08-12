@@ -23,11 +23,16 @@ class KitchenStoreRequest extends FormRequest
     {
         return [
             'name' => 'required',
-            'phone' => 'required|string|max:10|min:10|unique:kitchens,phone',
-            'whatsapp' => 'nullable|string|max:10|min:10|unique:kitchens,whatsapp',
+            'phone' => 'required|regex:/^[0-9]{10}$/|unique:kitchens,phone',
+            'whatsapp' => 'required|regex:/^[0-9]{10}$/|unique:kitchens,whatsapp',
             'city' => 'required',
             'district_id' => 'required',
             'state_id' => 'required',
+            'latitude'         => 'required',
+            'longitude'         => 'required',
+            'location_name'         => 'required',
+            'email'         => 'required|email|unique:kitchens,email',
+            'password' => 'required|min:6',
         ];
     }
 }

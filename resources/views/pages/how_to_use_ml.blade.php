@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Zopa Food Drop ഉപയോഗിക്കുന്ന വിധം')
+@section('title', 'How to use - ' . config('app.name'))
 
 @section('content')
 <div class="container my-4">
     <div class="text-center mb-4">
         <h2 class="position-relative d-inline-block px-4 py-2">
-            Zopa Food Drop ഉപയോഗിക്കുന്ന വിധം
+            @appName ഉപയോഗിക്കുന്ന വിധം
         </h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #27ae60; margin: auto; border-radius: 2px;"></div>
     </div>
@@ -53,7 +53,7 @@
             <p>കഴിഞ്ഞ ദിവസം അല്ലെങ്കിൽ അടുത്ത് ഭക്ഷണം ആവശ്യമില്ലെങ്കിൽ <em>My Leaves</em>-ൽ പോകുക, ആ ദിവസം അവധിയായി മാർക്ക് ചെയ്യുക.</p>
             <ul>
                 <li>നിങ്ങൾക്ക് <strong>{{ Utility::MAX_LEAVE_DAYS_AHEAD }}</strong> ദിവസത്തോളം മുൻകൂട്ടി അവധി അപേക്ഷിക്കാം.</li>
-                <li><strong>{{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong> കഴിഞ്ഞാൽ ആ ദിവസം അവധി റദ്ദാക്കാനാകില്ല.</li>
+                <li><strong>{{ $lastOrderTime }}</strong> കഴിഞ്ഞാൽ ആ ദിവസം അവധി റദ്ദാക്കാനാകില്ല.</li>
             </ul>
 
             <hr>
@@ -86,7 +86,7 @@
             <ul>
                 <li><strong>ലോഗിൻ ചെയ്യാൻ കഴിയുന്നില്ലേ?</strong> നിങ്ങളുടെ അക്കൗണ്ട് അനുമോദിച്ചിട്ടും സജീവമാണോ എന്ന് പരിശോധിക്കുക. സഹായത്തിന് ഞങ്ങളെ ബന്ധപ്പെടുക.</li>
                 <li><strong>ഭക്ഷണം അനുവദിച്ചിട്ടില്ലേ?</strong> Wallet-ൽ ബാലൻസ് പരിശോധിക്കുക, Leave അപേക്ഷിച്ചിട്ടുണ്ടോ എന്ന് നോക്കുക.</li>
-                <li><strong>Cutoff സമയം കഴിഞ്ഞു?</strong> <strong>{{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong> കഴിഞ്ഞാൽ ഓർഡർ അല്ലെങ്കിൽ Leave മാറ്റം സാധ്യമല്ല.</li>
+                <li><strong>Cutoff സമയം കഴിഞ്ഞു?</strong> <strong>{{ $lastOrderTime }}</strong> കഴിഞ്ഞാൽ ഓർഡർ അല്ലെങ്കിൽ Leave മാറ്റം സാധ്യമല്ല.</li>
             </ul>
 
             <hr>
@@ -95,7 +95,7 @@
             <ul>
                 <li><a href="{{ route('site_map') }}">Site Map</a> ഉപയോഗിച്ച് എളുപ്പത്തിൽ നീങ്ങാം.</li>
                 <li>നിങ്ങളുടെ Meal Wallet എപ്പോഴും മുഴുവനായിരിക്കാൻ ശ്രദ്ധിക്കുക.</li>
-                <li>Leave-കൾ <strong>{{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}</strong> -ന് മുമ്പ് അപേക്ഷിക്കുക.</li>
+                <li>Leave-കൾ <strong>{{ $lastOrderTime }}</strong> -ന് മുമ്പ് അപേക്ഷിക്കുക.</li>
             </ul>
 
             <a class="btn btn-zopa" href="{{ route('how_to_use_pdf') }}">

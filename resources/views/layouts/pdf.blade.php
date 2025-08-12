@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>@yield('title', 'Zopa Food Drop')</title>
+    <title>@yield('title', config('app.name'))</title>
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -64,7 +64,7 @@
     </style>
     @stack('styles')
 </head>
-<body>
+<body class="locale-{{ app()->getLocale() }}">
 
 <div class="header">
     <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('front/images/logo_red.png'))) }}" alt="Zopa Logo">
@@ -74,7 +74,7 @@
 @yield('content')
 
 <div class="footer">
-    © {{ date('Y') }} Zopa Food Drop — www.zopa.in
+    © {{ date('Y') }} config('app.name') — www.zopa.in
 </div>
 
 </body>

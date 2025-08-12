@@ -24,13 +24,18 @@ class Utility{
     const STATE_ID_KERALA = 12;
     const DISTRICT_ID_MPM = 230;
     const KITCHEN_KDY = 1;
-    const SINGLE_MEAL_ID = 1;
-    const CUTOFF_TIME = "17:30";
+    const CUTOFF_TIME = "08:50";
     const MAX_LEAVE_DAYS_AHEAD = 30;
     const MAX_MONTHLY_LEAVES = 5;
     const MAX_ACTIVE_LEAVES = 5;
     const WALLET_LOW_BALANCE = 5;
     const OTP_EXPIRY_MINUTE = 5;
+
+    const CUSTOMER_TYPE_INST = 'institution';
+    const CUSTOMER_TYPE_IND = 'individual';
+
+    const CATEGORY_MESS = 1;
+    const WALLET_GROUP_MEAL = 1;
 
 
     const PAGINATE_COUNT = 15;

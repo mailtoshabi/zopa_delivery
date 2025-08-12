@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Utilities\Utility;
+use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
@@ -46,6 +47,17 @@ class LoginController extends Controller
         return view('admin.auth.login');
     }
 
+    public function login(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::guard('web')->attempt($credentials)) {
+            return redirect()->intended('/super/admin');
+        }
+
+        return back()->withErrors(['email' => 'Invalid credentials']);
+    }
+
     protected function attemptLogin(Request $request)
     {
         // Add `status` as an additional condition to the credentials array
@@ -57,18 +69,7 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        $this->guard()->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
-
-        if ($response = $this->loggedOut($request)) {
-            return $response;
-        }
-
-        return $request->wantsJson()
-            ? new JsonResponse([], 204)
-            : redirect($this->redirectTo);
+        $this->guard('web')->logout();
+        return redirect()->route('admin.show.login');
     }
 }

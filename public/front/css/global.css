@@ -1,6 +1,6 @@
 html, body {
     height: 100%;
-    font-family: 'Montserrat', sans-serif;
+    /* font-family: 'Montserrat', sans-serif; */
 }
 
 body {
@@ -9,26 +9,56 @@ body {
     min-height: 100vh;
 }
 
+body.locale-en {
+    font-family: 'Montserrat', sans-serif;
+}
+
+body.locale-ml {
+    font-family: 'Noto Sans Malayalam', 'Manjari', 'Rachana', sans-serif;
+}
+
+.font-english {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.font-malayalam {
+    font-family: 'Noto Sans Malayalam', 'Manjari', 'Rachana', sans-serif;
+}
+
+.lang-box {
+    display: inline-block;
+    padding: 3px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    background-color: #f8f9fa;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+}
+
 main {
     flex: 1;
 }
 
 
 h2 {
-    font-family: 'Montserrat', sans-serif;
+    /* font-family: 'Montserrat', sans-serif; */
     font-weight: 600; /* Optional for bold effect */
 }
 
 h3 {
-    font-family: 'Montserrat', sans-serif;
+    /* font-family: 'Montserrat', sans-serif; */
 }
 
 h4,a,small,li,button {
-    font-family: 'Montserrat', sans-serif;
+    /* font-family: 'Montserrat', sans-serif; */
 }
 
 p {
-    font-family: 'Montserrat', sans-serif;
+    /* font-family: 'Montserrat', sans-serif; */
     font-weight: 400; /* Normal weight */
     line-height: 1.6; /* Improves readability */
     color: #333; /* Dark gray for better contrast */
@@ -37,6 +67,10 @@ p {
 a {
     --bs-text-opacity: 1;
     color: rgba(var(--bs-dark-rgb), var(--bs-text-opacity)) !important;
+}
+
+.changetogrey {
+    filter: grayscale(100%) !important;
 }
 
 .logo {
@@ -52,7 +86,7 @@ a {
     text-align: center;
 }
 .card-header {
-    font-family: 'Montserrat', sans-serif;
+    /* font-family: 'Montserrat', sans-serif; */
 }
 
 .btn-zopa {

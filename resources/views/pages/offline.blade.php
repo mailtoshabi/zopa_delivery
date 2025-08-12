@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'You are offline')
+@section('title', 'You are offline ' . config('app.name'))
 
 @section('content')
 <div class="flex flex-col items-center justify-center h-screen bg-gray-100 text-center px-6">
-    <img src="{{ asset('icons/icon-192x192.png') }}" alt="Zopa Food Drop Logo" class="w-24 h-24 mb-4">
+    <img src="{{ asset('icons/icon-192x192.png') }}" alt="@appName Logo" class="w-24 h-24 mb-4">
 
     <h1 class="text-2xl font-semibold text-gray-800 mb-2">⚠️ You're offline</h1>
     <p class="text-gray-600 mb-6">No internet connection detected.<br>Please check your network and try again.</p>
@@ -16,7 +16,7 @@
         Go back Home
     </a>
 
-    <p class="text-xs text-gray-400 mt-8">Zopa Food Drop © {{ now()->year }}</p>
+    <p class="text-xs text-gray-400 mt-8">@appName © {{ now()->year }}</p>
 </div>
 @endsection
 

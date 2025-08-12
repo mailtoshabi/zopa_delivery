@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'About Us - Zopa Food Drop')
+@section('title', 'About Us - ' . config('app.name'))
 
 @section('content')
 <div class="container mt-5">
@@ -14,14 +14,14 @@
 
     <div class="row align-items-center mt-4">
         <div class="col-md-6 order-md-1 order-2">
-            <p>At <strong>Zopa Food Drop</strong>, we believe that everyone deserves nutritious and delicious meals, just like home. Our journey began with a simple mission: to provide fresh, homemade food to office workers and busy individuals who crave healthy and flavorful meals without the hassle of cooking.</p>
+            <p>At <strong>@appName</strong>, we believe that everyone deserves nutritious and delicious meals, just like home. Our journey began with a simple mission: to provide fresh, homemade food to office workers and busy individuals who crave healthy and flavorful meals without the hassle of cooking.</p>
             <p>Our meals are crafted with love, using high-quality ingredients sourced from trusted local suppliers. We prioritize hygiene, taste, and convenience to ensure that every bite brings you comfort and satisfaction.</p>
-            <p>As we grow, our goal is to expand our offerings beyond meal delivery, bringing you an even wider selection of fresh and wholesome food options. Thank you for choosing Zopa Food Drop – your trusted partner for home-cooked goodness!</p>
+            <p>As we grow, our goal is to expand our offerings beyond meal delivery, bringing you an even wider selection of fresh and wholesome food options. Thank you for choosing @appName – your trusted partner for home-cooked goodness!</p>
             <h3>Our Story</h3>
-        <p>At Zopa Food Drop, we started with a simple mission: to bring fresh, home-cooked meals to busy professionals and families. Our journey began with a passion for food and a deep understanding of the need for convenient, healthy, and delicious meal options. Today, we take pride in delivering nutritious meals right to your doorstep, prepared with love and care.</p>
+        <p>At @appName, we started with a simple mission: to bring fresh, home-cooked meals to busy professionals and families. Our journey began with a passion for food and a deep understanding of the need for convenient, healthy, and delicious meal options. Today, we take pride in delivering nutritious meals right to your doorstep, prepared with love and care.</p>
         </div>
         <div class="col-md-6 order-md-2 order-1 text-center">
-            <img src="{{ asset('front/images/about_us.jpeg') }}" alt="About Zopa Food Drop" class="img-fluid rounded shadow">
+            <img src="{{ asset('front/images/about_us.jpeg') }}" alt="About @appName" class="img-fluid rounded shadow">
         </div>
     </div>
 
@@ -47,8 +47,8 @@
     <section class="mt-4 mb-5">
         <h3>Our Commitment</h3>
         <p>We believe that food is more than just sustenance – it’s about nourishment, joy, and connection. That’s why we strive to make every meal we deliver a delightful experience. Our team is dedicated to maintaining the highest standards of hygiene, quality, and customer satisfaction.</p>
-        <p>Join us on this journey to better eating habits and healthier living. At Zopa Food Drop, we don’t just serve food; we serve love, one meal at a time.</p>
-        <h4>Stay healthy. Eat fresh. Enjoy home-cooked goodness with Zopa Food Drop!</h4>
+        <p>Join us on this journey to better eating habits and healthier living. At @appName, we don’t just serve food; we serve love, one meal at a time.</p>
+        <h4>Stay healthy. Eat fresh. Enjoy home-cooked goodness with @appName!</h4>
     </section>
 </div>
 @endsection

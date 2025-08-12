@@ -152,7 +152,11 @@ class HomeController extends Controller
     // }
 
     public function test() {
+        $lat = 11.2404392;
+        $lon = 75.8156257;
 
+        $pin = get_postal_code($lat, $lon);
+        echo $pin;
 
     }
 

@@ -49,13 +49,15 @@
                                 <input id="city" name="city" type="text" class="form-control"  placeholder="Shop/Office Location" value="{{ isset($customer)?$customer->city:old('city')}}">
                                 @error('city') <p class="text-danger">{{ $message }}</p> @enderror
                             </div>
-                        </div>
 
-                        <div class="col-sm-6">
                             <div class="mb-3">
                                 <label for="landmark">Landmark</label>
                                 <input id="landmark" name="landmark" type="text" class="form-control"  placeholder="Landmark" value="{{ isset($customer)?$customer->landmark:old('landmark')}}">
                             </div>
+                        </div>
+
+                        <div class="col-sm-6">
+
 
                             <div class="mb-3 required">
                                 <label for="postal_code">Postal Code</label>
@@ -86,10 +88,20 @@
                                 <select id="kitchen_id" name="kitchen_id" class="form-control select2">
                                     <option value="">Select a Kitchen</option>
                                     @foreach ($kitchens as $kitchen )
-                                        <option value="{{ encrypt($kitchen->id) }}" {{ isset($customer)&&($customer->kitchen_id==$kitchen->id)?'selected':''}}>{{ $kitchen->name }}</option>
+                                        <option value="{{ encrypt($kitchen->id) }}" {{ isset($customer)&&($customer->kitchen_id==$kitchen->id)?'selected':''}}>{{ $kitchen->display_name }}</option>
                                     @endforeach
                                 </select>
                                 @error('kitchen_id') <p class="text-danger">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div class="mb-3 required">
+                                <label for="customer_type">Customer Type</label>
+                                <select id="customer_type" name="customer_type" class="form-control select2">
+                                    <option value="">Select Type</option>
+                                    <option value="{{ Utility::CUSTOMER_TYPE_IND }}" {{ isset($customer)&&($customer->customer_type==Utility::CUSTOMER_TYPE_IND)?'selected':'' }}>Individual</option>
+                                    <option value="{{ Utility::CUSTOMER_TYPE_INST }}" {{ isset($customer)&&($customer->customer_type==Utility::CUSTOMER_TYPE_INST)?'selected':'' }}>Institution</option>
+                                </select>
+                                @error('customer_type') <p class="text-danger">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
@@ -111,15 +123,17 @@
                                     <span id="imageContainer" @if(isset($customer)&&empty($customer->image_filename)) style="display: none" @endif>
                                         @if(isset($customer)&&!empty($customer->image_filename))
                                             <img src="{{ Storage::url(App\Models\Customer::DIR_PUBLIC . '/' . $customer->image_filename) }}" alt="" class="avatar-xxl rounded-circle me-2">
-                                            <button type="button" class="btn-close" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" aria-label="Close">x</button>
                                         @endif
                                     </span>
 
                                     <span id="fileContainer" @if(isset($customer)&&!empty($customer->image_filename)) style="display: none" @endif>
+                                        <div class="d-flex align-items-center gap-2">
                                         <input id="image" name="image" type="file" class="form-control"  placeholder="File">
                                         @if(isset($customer)&&!empty($customer->image_filename))
-                                            <button type="button" class="btn-close" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" aria-label="Close">x</button>
                                         @endif
+                                        </div>
                                     </span>
                                     <input name="isImageDelete" type="hidden" value="0">
                                 </div>
@@ -173,7 +187,7 @@
 <script src="{{ URL::asset('assets/libs/select2/select2.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/dropzone/dropzone.min.js') }}"></script>
 <script src="{{ URL::asset('assets/js/pages/ecommerce-select2.init.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script>
     $(document).ready(function() {
 
@@ -198,13 +212,16 @@
 </script>
 <script>
     $(document).ready(function() {
-        $('#imageContainer').find('button').click(function() {
+        $('#imageContainer').find('button').click(function(e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to delete?')) return;
             $('#imageContainer').hide();
             $('#fileContainer').show();
             $('input[name="isImageDelete"]').val(1);
         })
 
-        $('#fileContainer').find('button').click(function() {
+        $('#fileContainer').find('button').click(function(e) {
+            e.preventDefault();
             $('#fileContainer').hide();
             $('#imageContainer').show();
             $('input[name="isImageDelete"]').val(0);

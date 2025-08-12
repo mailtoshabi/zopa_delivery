@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -28,6 +29,7 @@ class CategoryController extends Controller
             'name' => 'required|unique:categories,name',
         ]);
         $input = request()->only(['name']);
+        $input['slug'] = Str::slug($input['name']);
         if(request()->hasFile('image')) {
             $extension = request('image')->extension();
             $fileName = Utility::cleanString(request()->name) . date('YmdHis') . '.' . $extension;
@@ -59,6 +61,7 @@ class CategoryController extends Controller
             'name' => 'required|unique:categories,name,'. $id,
         ]);
         $input = request()->only(['name']);
+        $input['slug'] = Str::slug($input['name']);
         if(request('isImageDelete')==1) {
             Storage::delete(Category::DIR_PUBLIC . $category->image);
             $input['image'] =null;

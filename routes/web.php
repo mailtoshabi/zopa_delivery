@@ -15,10 +15,9 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\HomeController as AdminHomeController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\WalletGroupController;
 use App\Http\Controllers\Admin\KitchenController;
 use App\Http\Controllers\Admin\IngredientController;
-use App\Http\Controllers\Admin\PaymentController;
-use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -31,9 +30,22 @@ use App\Http\Controllers\Admin\CustomerOrderController;
 use App\Http\Controllers\Admin\MealController;
 use App\Http\Controllers\Admin\DailyMealController;
 use App\Http\Controllers\Admin\FeedbackController;
+use App\Http\Controllers\Admin\MessCategoryController;
 use App\Http\Controllers\Admin\RemarkController;
 use App\Http\Controllers\Front\CartController;
-use App\Http\Controllers\PaymentController as FrontPaymentController;
+use App\Http\Controllers\Front\MapController;
+use App\Http\Controllers\Front\QuantityOverrideController;
+use App\Http\Controllers\Front\LanguageController as FrontLanguageController;
+use App\Http\Controllers\Front\PaymentController as FrontPaymentController;
+
+use App\Http\Controllers\Kitchen\Auth\LoginController as KitchenLoginController;
+use App\Http\Controllers\Kitchen\HomeController as KitchenHomeController;
+use App\Http\Controllers\Kitchen\DailyMealController as KitchenDailyMealController;
+use App\Http\Controllers\Kitchen\CustomerOrderController as KitchenCustomerOrderController;
+use App\Http\Controllers\Kitchen\CustomerController as KitchenCustomerController;
+use App\Http\Controllers\Kitchen\FeedbackController as KitchenFeedbackController;
+use App\Http\Controllers\Kitchen\MealController as KitchenMealController;
+use App\Http\Controllers\Kitchen\AddonController as KitchenAddonController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,7 +81,10 @@ Route::group(['prefix'=>'sms', 'as'=>'sms.'], function() {
     Route::post('/send', [HomeController::class, 'send'])->name('send');
 });
 
+Route::view('/access-denied', 'pages.unauthenticated')->name('unauthenticated.page');
+
 Route::post('/get-districts', [FrontHomeController::class, 'getDistrictList'])->name('get.districts');
+Route::get('/get-kitchens', [RegisterController::class, 'getNearbyKitchensTest']);
 
 // Route::middleware(['auth:guest'])->group(function () {
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('front.register');
@@ -91,11 +106,15 @@ Route::post('/get-districts', [FrontHomeController::class, 'getDistrictList'])->
 
     });
 // });
-Route::middleware(['auth:customer', 'approved.customer'])->prefix('meal')->group(function () {
+
+Route::get('language/{locale}', [FrontLanguageController::class, 'switch'])->name('front.set.language');
+
+Route::middleware(['auth:customer', 'approved.customer'])->group(function () { //->prefix('meal')
 
     Route::get('/registration-success', function () {
         return view('pages.registration_success');
     })->name('front.registration.success');
+
     Route::post('customer/logout', [LoginController::class, 'logout'])->name('customer.logout');
 
     Route::get('/purchase/{meal}', [FrontHomeController::class, 'showMealPurchasePage'])->name('meal.purchase');
@@ -111,15 +130,21 @@ Route::middleware(['auth:customer', 'approved.customer'])->prefix('meal')->group
     })->name('meal.payment.failed');
 
     Route::get('/my-wallet', [FrontHomeController::class, 'myWallet'])->name('my.wallet');
-    Route::get('/daily-meals', [FrontHomeController::class, 'dailyMeals'])->name('customer.daily_meals');
+    Route::post('/wallet/make-default', [FrontHomeController::class, 'makeDefault'])->name('front.wallet.make-default');
+    Route::get('/todays-meal', [FrontHomeController::class, 'dailyMeals'])->name('customer.daily_meals');
     Route::get('/extra-meals', [FrontHomeController::class, 'extraMeals'])->name('customer.extra_meals');
-    Route::post('/daily-meals/{id}/cancel', [FrontHomeController::class, 'cancelDailyOrder'])->name('customer.daily_meals.cancel');
+    Route::post('/todays-meal/{id}/cancel', [FrontHomeController::class, 'cancelDailyOrder'])->name('customer.daily_meals.cancel');
     Route::get('/my-purchases', [FrontHomeController::class, 'myPurchases'])->name('customer.purchases');
+    Route::get('/pay-later/{id}', [FrontHomeController::class, 'payLater'])->name('customer.orders.pay');
     Route::post('/customer/extra-meal', [FrontHomeController::class, 'requestExtraMeal'])->name('customer.request.extra-meal');
     Route::get('my-leaves', [FrontHomeController::class, 'mealLeaves'])->name('customer.leave.index');
     Route::post('my-leaves', [FrontHomeController::class, 'markLeaves'])->name('customer.mark.leaves');
     Route::delete('/my-leaves/{id}', [FrontHomeController::class, 'destroyLeave'])->name('customer.meal-leaves.destroy');
     Route::post('/addon-wallet/toggle-status', [FrontHomeController::class, 'toggleStatus'])->name('addonWallet.toggleStatus');
+
+    Route::get('quantity-overrides', [QuantityOverrideController::class, 'index'])->name('customer.quantity-overrides.index');
+    Route::post('quantity-overrides', [QuantityOverrideController::class, 'store'])->name('customer.quantity-overrides.store');
+    Route::delete('quantity-overrides/{id}', [QuantityOverrideController::class, 'destroy'])->name('customer.quantity-overrides.destroy');
 
     Route::get('/feedbacks', [FrontHomeController::class, 'feedbacks'])->name('feedbacks');
     Route::post('feedback', [FrontHomeController::class, 'storeFeedback'])->name('customer.feedback.store');
@@ -145,34 +170,39 @@ Route::middleware(['auth:customer', 'approved.customer'])->group(function () {
 
     Route::get('/profile/change-password', [FrontHomeController::class, 'showChangePasswordForm'])->name('customer.profile.password.change');
     Route::put('/profile/change-password', [FrontHomeController::class, 'updatePassword'])->name('customer.password.update');
+
+    Route::get('/buy/{slug}', [FrontHomeController::class, 'showMeals'])->name('front.meal');
+    Route::get('/buy-plans', [FrontHomeController::class, 'showMealPlans'])->name('front.meal.plan');
+    Route::get('/buy-single', [FrontHomeController::class, 'showSingleMeal'])->name('front.meal.single');
+    Route::get('/buy-addons', [FrontHomeController::class, 'showAddons'])->name('front.show.addons');
 });
 
-Route::get('/buy-plans', [FrontHomeController::class, 'showMealPlans'])->name('front.meal.plan');
-Route::get('/buy-single', [FrontHomeController::class, 'showSingleMeal'])->name('front.meal.single');
-Route::get('/buy-addons', [FrontHomeController::class, 'showAddons'])->name('front.show.addons');
 
 Route::get('/about-us', [FrontHomeController::class, 'about_us'])->name('about_us');
 Route::get('/payment-terms', [FrontHomeController::class, 'payment_terms'])->name('payment_terms');
 Route::get('/privacy-policy', [FrontHomeController::class, 'privacy_policy'])->name('privacy_policy');
 Route::get('/support', [FrontHomeController::class, 'support'])->name('support');
-Route::get('/meals/faq', [FrontHomeController::class, 'faq'])->name('faq');
-Route::get('/meals/how-to-use', [FrontHomeController::class, 'how_to_use'])->name('how_to_use');
-Route::get('/how-to-use-pdf', [FrontHomeController::class, 'downloadHowToUse'])->name('how_to_use_pdf');
-Route::get('/meals/site-map', [FrontHomeController::class, 'site_map'])->name('site_map');
+Route::get('/mess/faq', [FrontHomeController::class, 'faq'])->name('faq');
+Route::get('/mess/how-to-use', [FrontHomeController::class, 'how_to_use'])->name('how_to_use');
+Route::get('/mess/how-to-use-pdf', [FrontHomeController::class, 'downloadHowToUse'])->name('how_to_use_pdf');
+Route::get('/mess/site-map', [FrontHomeController::class, 'site_map'])->name('site_map');
 Route::view('/offline', 'pages.offline')->name('offline');
+
+Route::get('/get-nearby-kitchens', [MapController::class, 'getNearbyKitchens'])->name('get.nearby.kitchens');
 
 
 
 // ADMIN ROUTES START
 
-Auth::routes(['login' => false, 'register'=>false]);
-Route::prefix('admin')->group(function () {
+Auth::routes(['login' => false, 'register'=>false, 'logout'=>false]);
+Route::prefix('super/admin')->group(function () {
     Route::get('/login', [AdminLoginController::class,'showLoginForm'])->name('admin.show.login');
     Route::post('/login', [AdminLoginController::class,'login'])->name('login');
+    Route::post('logout', [AdminLoginController::class, 'logout'])->name('logout');
 });
 
-Route::get('/admin', [AdminHomeController::class,'index'])->middleware('auth')->name('admin');
-Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+Route::get('/super/admin', [AdminHomeController::class,'index'])->middleware('auth')->name('admin');
+Route::prefix('super/admin')->name('admin.')->middleware(['auth:web'])->group(function () {
     Route::get('/dashboard', [AdminHomeController::class,'index'])->name('dashboard');
     Route::post('/districts', [AdminHomeController::class,'distric_list'])->name('list.districts');
 
@@ -185,6 +215,28 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/destroy/{id}',[CategoryController::class,'destroy'])->name('destroy');
         Route::get('/change-status/{id}',[CategoryController::class,'changeStatus'])->name('changeStatus');
         Route::get('/products/{id}',[CategoryController::class,'products'])->name('products');
+    });
+
+    Route::group(['prefix'=>'mess_categories', 'as'=>'mess_categories.', 'middleware' => ['role:Administrator|Manager']], function() {
+        Route::get('/',[MessCategoryController::class,'index'])->name('index');
+        Route::get('/create',[MessCategoryController::class,'create'])->name('create');
+        Route::post('/store',[MessCategoryController::class,'store'])->name('store');
+        Route::get('/edit/{id}',[MessCategoryController::class,'edit'])->name('edit');
+        Route::put('/update',[MessCategoryController::class,'update'])->name('update');
+        Route::delete('/destroy/{id}',[MessCategoryController::class,'destroy'])->name('destroy');
+        Route::get('/change-status/{id}',[MessCategoryController::class,'changeStatus'])->name('changeStatus');
+        Route::get('/products/{id}',[MessCategoryController::class,'products'])->name('products');
+    });
+
+    Route::group(['prefix'=>'wallet_groups', 'as'=>'wallet_groups.', 'middleware' => ['role:Administrator|Manager']], function() {
+        Route::get('/',[WalletGroupController::class,'index'])->name('index');
+        Route::get('/create',[WalletGroupController::class,'create'])->name('create');
+        Route::post('/store',[WalletGroupController::class,'store'])->name('store');
+        Route::get('/edit/{id}',[WalletGroupController::class,'edit'])->name('edit');
+        Route::put('/update',[WalletGroupController::class,'update'])->name('update');
+        Route::delete('/destroy/{id}',[WalletGroupController::class,'destroy'])->name('destroy');
+        Route::get('/change-status/{id}',[WalletGroupController::class,'changeStatus'])->name('changeStatus');
+        Route::get('/products/{id}',[WalletGroupController::class,'products'])->name('products');
     });
 
     Route::middleware(['role:Administrator|Manager'])->group(function () {
@@ -234,20 +286,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     });
 
     Route::middleware(['role:Administrator|Manager'])->group(function () {
-        Route::get('daily-meals-orders', [DailyMealController::class, 'index'])->name('daily_meals.index');
+        Route::get('todays-meal-orders', [DailyMealController::class, 'index'])->name('daily_meals.index');
         Route::get('extra-meals-orders', [DailyMealController::class, 'extra_meals'])->name('daily_meals.extra');
         Route::get('previous-meals-orders', [DailyMealController::class, 'previous'])->name('daily_meals.previous');
-        Route::post('/daily-meals-orders/generate', [DailyMealController::class, 'generate'])->name('daily_meals.generate');
+        Route::post('/todays-meal-orders/generate', [DailyMealController::class, 'generate'])->name('daily_meals.generate');
+        Route::post('/todays-meal-orders/generate-institution', [DailyMealController::class, 'generateInstitutionalMeals'])->name('daily_meals.generate.institution');
         Route::post('daily_meals/delivery/{id}', [DailyMealController::class, 'MarkDelivery'])->name('daily_meals.changeDelivery');
-        Route::post('/daily-meals-orders/markall-delivered', [DailyMealController::class, 'markAllDelivered'])->name('daily_meals.mark.all.delivered');
-        Route::post('/daily-meals/undo-delivered', [DailyMealController::class, 'undoAllDelivered'])->name('daily_meals.undo.delivered');
+        Route::post('/todays-meal-orders/markall-delivered', [DailyMealController::class, 'markAllDelivered'])->name('daily_meals.mark.all.delivered');
+        Route::post('/todays-meal/undo-delivered', [DailyMealController::class, 'undoAllDelivered'])->name('daily_meals.undo.delivered');
+        Route::get('/daily-meals/export', [DailyMealController::class, 'exportDailyMeals'])->name('daily_meals.export');
     });
 
     Route::group(['prefix'=>'purchases', 'as'=>'orders.', 'middleware' => ['role:Administrator']], function() {
             Route::get('/',[CustomerOrderController::class,'index'])->name('index');
-
             Route::get('/change-payment/{id}',[CustomerOrderController::class,'changePayment'])->name('changePayment');
-            Route::get('/activate/{id}',[CustomerOrderController::class,'activate'])->name('activate');
+            Route::get('/activate/{id}/{is_paid?}',[CustomerOrderController::class,'activate'])->name('activate');
     });
 
 
@@ -274,25 +327,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('/get-cost',[ProductController::class,'getCost'])->name('get_cost');
     });
 
-    Route::group(['prefix'=>'payments', 'as'=>'payments.', 'middleware' => ['role:Administrator|Manager|HR']], function() {
-        Route::post('/store',[PaymentController::class,'store'])->name('store');
-        Route::put('/update',[PaymentController::class,'update'])->name('update');
-        Route::delete('/destroy/{id}',[PaymentController::class,'destroy'])->name('destroy');
-    });
-
-    Route::group(['prefix'=>'branches', 'as'=>'branches.', 'middleware' => ['role:Administrator']], function() {
-        Route::get('/',[BranchController::class,'index'])->name('index');
-        Route::get('/create',[BranchController::class,'create'])->name('create');
-        Route::post('/store',[BranchController::class,'store'])->name('store');
-        Route::get('/edit/{id}',[BranchController::class,'edit'])->name('edit');
-        Route::get('/show/{id}',[BranchController::class,'show'])->name('view');
-        Route::put('/update',[BranchController::class,'update'])->name('update');
-        Route::delete('/destroy/{id}',[BranchController::class,'destroy'])->name('destroy');
-        Route::get('/change-status/{id}',[BranchController::class,'changeStatus'])->name('changeStatus');
-        Route::get('/make-default/{id}',[BranchController::class,'makeDefault'])->name('makeDefault');
-        Route::post('/make-global-default',[BranchController::class,'makeDefaultGlobal'])->name('makeDefaultGlobal');
-        Route::post('/districts', [BranchController::class,'distric_list'])->name('list.districts');
-    });
+    // Route::group(['prefix'=>'branches', 'as'=>'branches.', 'middleware' => ['role:Administrator']], function() {
+    //     Route::get('/',[BranchController::class,'index'])->name('index');
+    //     Route::get('/create',[BranchController::class,'create'])->name('create');
+    //     Route::post('/store',[BranchController::class,'store'])->name('store');
+    //     Route::get('/edit/{id}',[BranchController::class,'edit'])->name('edit');
+    //     Route::get('/show/{id}',[BranchController::class,'show'])->name('view');
+    //     Route::put('/update',[BranchController::class,'update'])->name('update');
+    //     Route::delete('/destroy/{id}',[BranchController::class,'destroy'])->name('destroy');
+    //     Route::get('/change-status/{id}',[BranchController::class,'changeStatus'])->name('changeStatus');
+    //     Route::get('/make-default/{id}',[BranchController::class,'makeDefault'])->name('makeDefault');
+    //     Route::post('/make-global-default',[BranchController::class,'makeDefaultGlobal'])->name('makeDefaultGlobal');
+    //     Route::post('/districts', [BranchController::class,'distric_list'])->name('list.districts');
+    // });
 
 
     Route::group(['prefix'=>'users', 'as'=>'users.', 'middleware' => ['role:Administrator']], function() {
@@ -319,6 +366,76 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     });
 });
 // Admin Dashboard Routes --End--
+
+
+
+// Ktchen Dashboard Routes --Start--
+Route::get('/kitchen/admin', [KitchenHomeController::class,'index'])->middleware('auth:kitchen')->name('kitchen.admin');
+Route::prefix('kitchen/admin')->name('kitchen.')->group(function () {
+    Route::get('login', [KitchenLoginController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [KitchenLoginController::class, 'login'])->name('login.submit');
+    Route::post('logout', [KitchenLoginController::class, 'logout'])->name('logout');
+
+    Route::middleware('auth:kitchen')->group(function () {
+        Route::get('/dashboard', [KitchenHomeController::class,'index'])->name('dashboard');
+        Route::post('/districts', [AdminHomeController::class,'distric_list'])->name('list.districts');
+        Route::group(['prefix'=>'meals-orders', 'as'=>'daily_meals.'], function () {
+            Route::get('daily', [KitchenDailyMealController::class, 'index'])->name('index');
+            Route::get('extra', [KitchenDailyMealController::class, 'extra_meals'])->name('extra');
+            Route::get('previous', [KitchenDailyMealController::class, 'previous'])->name('previous');
+            Route::post('generate', [KitchenDailyMealController::class, 'generate'])->name('generate');
+            Route::post('generate-institution', [KitchenDailyMealController::class, 'generateInstitutionalMeals'])->name('generate.institution');
+            Route::post('delivery/{id}', [KitchenDailyMealController::class, 'MarkDelivery'])->name('changeDelivery');
+            Route::post('markall-delivered', [KitchenDailyMealController::class, 'markAllDelivered'])->name('mark.all.delivered');
+            Route::post('undo-delivered', [KitchenDailyMealController::class, 'undoAllDelivered'])->name('undo.delivered');
+            Route::get('/kitchen/daily-meals/export', [KitchenDailyMealController::class, 'exportKitchen'])->name('kitchen.daily_meals.export');
+        });
+
+        Route::group(['prefix'=>'purchases', 'as'=>'orders.'], function() {
+            Route::get('/',[KitchenCustomerOrderController::class,'index'])->name('index');
+            Route::get('/change-payment/{id}',[KitchenCustomerOrderController::class,'changePayment'])->name('changePayment');
+            Route::get('/activate/{id}/{is_paid?}',[KitchenCustomerOrderController::class,'activate'])->name('activate');
+        });
+
+
+        Route::group(['prefix'=>'customers', 'as'=>'customers.'], function () {
+            Route::get('wallets', [KitchenCustomerController::class, 'wallets'])->name('wallets');
+            Route::get('wallets/status/{id}', [KitchenCustomerController::class, 'toggleWalletStatus'])->name('wallets.toggleWalletStatus');
+            Route::post('wallets/bulk-toggle', [KitchenCustomerController::class, 'bulkToggleWalletStatus'])->name('wallets.bulkToggle');
+            Route::get('customers/status/{id}', [KitchenCustomerController::class, 'changeStatus'])->name('changeStatus');
+
+            Route::get('addon-wallets', [KitchenCustomerController::class, 'addon_wallets'])->name('addon.wallets');
+            Route::get('addon-wallets/status/{id}', [KitchenCustomerController::class, 'toggleAddonWalletStatus'])->name('addons.toggleWalletStatus');
+            Route::post('addons/bulk-toggle', [KitchenCustomerController::class, 'bulkToggleAddonWalletStatus'])->name('addons.bulkToggle');
+
+            Route::get('customers/status/{id}', [KitchenCustomerController::class, 'changeStatus'])->name('changeStatus');
+            Route::get('customers/approve/{id}',[KitchenCustomerController::class,'approve'])->name('approve');
+        });
+        Route::resource('customers', KitchenCustomerController::class);
+
+        Route::prefix('customer-feedbacks')->name('feedbacks.')->group(function () {
+            Route::get('/', [KitchenFeedbackController::class, 'index'])->name('index');
+            Route::get('/toggle/{id}', [KitchenFeedbackController::class, 'togglePublic'])->name('togglePublic');
+            Route::post('/{feedback}/reply-ajax', [KitchenFeedbackController::class, 'replyAjax'])->name('reply.ajax');
+        });
+
+        Route::prefix('meals')->name('meals.')->group(function () {
+            Route::get('/',[KitchenMealController::class,'index'])->name('index');
+            Route::post('/update', [KitchenMealController::class, 'update'])->name('update');
+            // Route::get('/status/{id}', [KitchenMealController::class, 'changeStatus'])->name('changeStatus');
+        });
+
+        Route::prefix('addons')->name('addons.')->group(function () {
+            Route::get('/',[KitchenAddonController::class,'index'])->name('index');
+            Route::post('/update', [KitchenAddonController::class, 'update'])->name('update');
+            // Route::get('/status/{id}', [KitchenAddonController::class, 'changeStatus'])->name('changeStatus');
+        });
+
+    });
+
+});
+
+// Ktchen Dashboard Routes --End--
 
 
 //Language Translation

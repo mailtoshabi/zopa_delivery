@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Meal Plans | Zopa Food Drop')</title>
+    <title>@yield('title', config('app.name'))</title>
     <!-- Bootstrap CSS -->
     <link href="{{ asset('front/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('front/css/global.css') }}" rel="stylesheet">
@@ -149,7 +149,7 @@
     </style>
     @stack('styles')
 </head>
-<body>
+<body class="locale-{{ app()->getLocale() }}">
 <div id="loading-overlay" style="display: none;">
     <div class="loading-spinner"></div>
 </div>
@@ -228,7 +228,7 @@
       </div>
 
       <div class="modal-body text-center">
-        <img src="{{ asset('front/images/logo_red.png') }}" alt="Zopa Food Drop" width="80" class="mb-3">
+        <img src="{{ asset('front/images/logo_red.png') }}" alt="@appName" width="80" class="mb-3">
         <p>Get a faster, smoother Zopa experience right on your phone — install our app now!</p>
       </div>
 

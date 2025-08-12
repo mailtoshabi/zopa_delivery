@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Buy A Meal - Zopa Food Drop')
+@section('title', 'Buy A Meal - ' . config('app.name'))
 
 @section('content')
 <div class="container my-2">
@@ -8,7 +8,7 @@
         <h2 class="position-relative d-inline-block px-4 py-2">Buy A Meal</h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
-
+    @if(isset($meal))
     <div class="row d-flex justify-content-center align-items-center">
         {{-- @foreach($meals as $meal) --}}
             <div class="col-sm-6 mb-3">
@@ -18,7 +18,7 @@
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
-                            <img src="{{ asset('front/images/meals.png') }}" alt="Zopa Food Drop" class="img-fluid d-block mx-auto">
+                            <img src="{{ asset('front/images/meals.png') }}" alt="@appName" class="img-fluid d-block mx-auto">
                         </div>
                         <ul class="list-group mt-3">
                             @foreach($meal->ingredients as $ingredient)
@@ -45,5 +45,6 @@
             </div>
         {{-- @endforeach --}}
     </div>
+    @endif
 </div>
 @endsection

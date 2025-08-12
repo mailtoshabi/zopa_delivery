@@ -1,7 +1,7 @@
 {
-  "name": "Zopa Food Drop",
+  "name": "{{ config('app.name') }}",
   "short_name": "Zopa",
-  "description": "Zopa Food Drop - Homely Meals. Every Day. Your Way.",
+  "description": "{{ config('app.name') }} - Homely Meals. Every Day. Your Way.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

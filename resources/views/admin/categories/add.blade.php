@@ -39,15 +39,17 @@
                                     <span id="imageContainer" @if(isset($category)&&empty($category->image)) style="display: none" @endif>
                                         @if(isset($category)&&!empty($category->image))
                                             <img src="{{ URL::asset(App\Models\Category::DIR_STORAGE . $category->image) }}" alt="" class="avatar-xxl rounded-circle me-2">
-                                            <button type="button" class="btn-close" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" aria-label="Close">x</button>
                                         @endif
                                     </span>
 
                                     <span id="fileContainer" @if(isset($category)&&!empty($category->image)) style="display: none" @endif>
+                                        <div class="d-flex align-items-center gap-2">
                                         <input id="image" name="image" type="file" class="form-control"  placeholder="File">
                                         @if(isset($category)&&!empty($category->image))
-                                            <button type="button" class="btn-close" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" aria-label="Close">x</button>
                                         @endif
+                                        </div>
                                     </span>
                                     <input name="isImageDelete" type="hidden" value="0">
                                 </div>
@@ -103,16 +105,19 @@
 <script src="{{ URL::asset('assets/libs/select2/select2.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/dropzone/dropzone.min.js') }}"></script>
 <script src="{{ URL::asset('assets/js/pages/ecommerce-select2.init.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script>
     $(document).ready(function() {
-        $('#imageContainer').find('button').click(function() {
+        $('#imageContainer').find('button').click(function(e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to delete?')) return;
             $('#imageContainer').hide();
             $('#fileContainer').show();
             $('input[name="isImageDelete"]').val(1);
         })
 
-        $('#fileContainer').find('button').click(function() {
+        $('#fileContainer').find('button').click(function(e) {
+            e.preventDefault();
             $('#fileContainer').hide();
             $('#imageContainer').show();
             $('input[name="isImageDelete"]').val(0);

@@ -71,7 +71,7 @@
                                  </div>
                              </th>
                              <th scope="col">Name</th>
-                             <th scope="col">Products</th>
+                             {{-- <th scope="col">Products</th> --}}
                              <th style="width: 80px; min-width: 80px;">Action</th>
                          </tr>
                          </thead>
@@ -99,9 +99,9 @@
                                         <a href="{{ route('admin.categories.edit',encrypt($category->id))}}" class="">{{ $category->name }}</a>
                                     </td>
 
-                                    <td>
+                                    {{-- <td>
                                         <a target="_blank" href="{{ route('admin.categories.products',encrypt($category->id))}}" class="">View Products</a>
-                                    </td>
+                                    </td> --}}
 
 
                                     <td>
@@ -139,6 +139,6 @@
 <script src="{{ URL::asset('assets/libs/datatables.net/datatables.net.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script src="{{ URL::asset('assets/js/pages/datatable-pages.init.js') }}"></script>
 @endsection

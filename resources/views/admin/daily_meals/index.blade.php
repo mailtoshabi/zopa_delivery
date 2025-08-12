@@ -40,13 +40,13 @@
                 <div class="tab-content p-3 text-muted">
                     <div class="tab-pane active">
                         <div class="row align-items-center">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <h5 class="card-title">@lang('translation.Meal_List') <span class="text-muted fw-normal ms-2">({{ $dailyMeals->total() }})</span></h5>
                                 </div>
                             </div>
                             @if($mealtype ==1)
-                                <div class="col-md-6 text-start">
+                                <div class="col-md-8 text-end">
                                     <div class="d-inline-block me-2">
                                         <form action="{{ route('admin.daily_meals.mark.all.delivered') }}" method="POST" onsubmit="return confirm('Are you sure to mark all as delivered?')">
                                             @csrf
@@ -64,33 +64,52 @@
                                         </form>
                                     </div>
                                     <div class="d-inline-block">
-                                        <form action="{{ route('admin.daily_meals.generate') }}" method="POST" onsubmit="return confirm('Are you sure to generate daily meals?')">
+                                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#generateMealModal">
+                                            <i class="mdi mdi-sync"></i> Generate Daily Meal
+                                        </button>
+                                    </div>
+                                    <div class="d-inline-block">
+                                        {{-- <a href="{{ route('admin.daily_meals.export', ['date' => request('date')]) }}"
+                                        class="btn btn-warning text-dark btn-sm ">
+                                        <i class="fas fa-file-excel"></i> Export to Excel
+                                        </a> --}}
+
+                                        <button type="button" class="btn btn-warning text-dark btn-sm" data-bs-toggle="modal" data-bs-target="#exportModal">
+                                            <i class="fas fa-file-excel"></i> Export to Excel
+                                        </button>
+                                    </div>
+
+                                    {{-- <div class="d-inline-block">
+                                        <form action="{{ route('admin.daily_meals.generate.institution') }}" method="POST" onsubmit="return confirm('Are you sure to generate daily meals for Institution?')">
                                             @csrf
-                                            <button type="submit" class="btn btn-primary btn-sm">
-                                                <i class="mdi mdi-sync"></i> Generate From Wallet
+                                            <button type="submit" class="btn btn-warning text-dark btn-sm">
+                                                <i class="mdi mdi-sync"></i> Generate Daily Meal INST
                                             </button>
                                         </form>
-                                    </div>
+                                    </div> --}}
                                 </div>
 
                             @endisset
                         </div>
 
                         <div class="table-responsive mb-4">
-                            <form method="GET" class="row g-3 mb-3">
-                                <div class="col-auto">
-                                    <input type="date" name="date" class="form-control" value="{{ request('date') }}">
-                                </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                                    <a href="{{ route('admin.daily_meals.extra') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
-                                </div>
-                            </form>
+                            @if($mealtype !=1)
+                                <form method="GET" class="row g-3 mb-3">
+                                    <div class="col-auto">
+                                        <input type="date" name="date" class="form-control" value="{{ request('date') }}">
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                                        <a href="{{ route('admin.daily_meals.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                                    </div>
+                                </form>
+                            @endif
                             <table class="table align-middle dt-responsive nowrap" style="width: 100%;">
                                 <thead>
                                     <tr>
                                         <th>Customer</th>
                                         <th>Phone</th>
+                                        <th>Item</th>
                                         <th>Quantity</th>
                                         <th>Addons</th>
                                         <th>Status</th>
@@ -101,8 +120,11 @@
                                 <tbody>
                                     @forelse ($dailyMeals as $meal)
                                         <tr>
-                                            <td>{{ $meal->customer->name ?? 'N/A' }}</td>
+                                            <td>{{ $meal->customer->name ?? 'N/A' }}
+                                                <br><small>Kitchen: {{ $meal->customer->kitchen->display_name }}</small>
+                                            </td>
                                             <td>{{ $meal->customer->phone ?? '-' }}</td>
+                                            <td>{{ $meal->walletGroup->name ?? '-' }}</td>
                                             <td>{{ $meal->quantity }}</td>
 
                                             {{-- Addons column --}}
@@ -225,12 +247,93 @@
     </div>
     @endif
 @endforeach
+
+@if($mealtype ==1)
+    <!-- Generate Meal Modal -->
+    <div class="modal fade" id="generateMealModal" tabindex="-1" aria-labelledby="generateMealModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form action="{{ route('admin.daily_meals.generate') }}" method="POST" onsubmit="return confirm('Are you sure to generate daily meals for selected kitchen?')">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="generateMealModalLabel">Generate Daily Meals</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="kitchen_id" class="form-label">Select Kitchen</label>
+                            <select name="kitchen_id" id="kitchen_id" class="form-select" required>
+                                <option value="">-- Select Kitchen --</option>
+                                @foreach($kitchens as $kitchen)
+                                    <option value="{{ $kitchen->id }}">{{ $kitchen->display_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Generate</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="GET" action="{{ route('admin.daily_meals.export') }}" onsubmit="return confirm('Are you sure to generate excel of daily meals for selected kitchen?')">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportModalLabel">Select Kitchen for Export</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="kitchen_id" class="form-label">Kitchen</label>
+                        <select name="kitchen_id" id="kitchen_id" class="form-select" required>
+                            <option value="">-- Select Kitchen --</option>
+                            @foreach($kitchens as $kitchen)
+                                <option value="{{ encrypt($kitchen->id) }}">{{ $kitchen->display_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" name="date" id="date" class="form-control" value="{{ request('date', now()->toDateString()) }}">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i> Download
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@endif
 @endsection
 
 @section('script')
 <script src="{{ URL::asset('assets/libs/datatables.net/datatables.net.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script src="{{ URL::asset('assets/js/pages/datatable-pages.init.js') }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('#exportModal form').addEventListener('submit', function() {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+        modal.hide();
+    });
+});
+</script>
 @endsection

@@ -1,0 +1,41 @@
+<?php
+
+return [
+
+    "welcome" => "Welcome to " . config('app.name'),
+    "feature" => "Nutritious. Affordable. Delivered Daily.",
+    "about_short" => "is your trusted partner for daily meals, delivering home-style food right to your doorstep. Whether you're a student, a busy professional, or a senior, our thoughtfully crafted meal plans are designed to fit seamlessly into your lifestyle—ensuring convenience, nutrition, and a taste of home every day.",
+    "meal_plans" => ["plan"=>"Meal Plans","explore"=>"Explore Meal Plans"],
+    "why_choose" => "Why Choose " . config('app.name'),
+    "menu" => [
+        'home'      => 'Home',
+        'daily_meals'      => 'Today\'s Meal',
+        'zopa_meals'       => 'Zopa Meals',
+        'zopa_mess'       => 'Zopa Mess',
+        'wallet'           => 'Wallet',
+        'buy_plan'         => 'Buy A Plan',
+        'buy_single'       => 'Buy Single',
+        'buy_addons'       => 'Addons',
+        'request_extra'    => 'Request Extra Meal',
+        'feedbacks'        => 'Feedbacks',
+        'my_account'       => 'My Account',
+        'leaves'           => 'Leaves',
+        'purchases'        => 'Purchases',
+        'extra_meals'      => 'Extra Meals',
+        'profile'          => 'Profile',
+        'logout'           => 'Logout',
+        'meal_wallet' => 'Meal Wallet',
+        'my_quantity' => 'Daily Meals Quantity',
+        'about' => 'About Us',
+        'how_to_use' => 'How to Use',
+        'payment_terms' => 'Payment Terms',
+        'privacy' => 'Privacy Policy',
+        'support' => 'Support',
+        'faq' => 'FAQ',
+        'site_map' => 'Site Map',
+    ],
+    "page" => [
+        'my_leaves' => 'My Leaves',
+        'my_quantities' => 'My Daily Meal Quantities',
+    ],
+];

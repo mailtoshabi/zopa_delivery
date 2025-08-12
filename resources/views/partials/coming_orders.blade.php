@@ -21,10 +21,10 @@
                     @endif
                 </div>
 
-                @if ($order->status == 1 && now()->format('H:i') < Utility::CUTOFF_TIME)
+                @if ($order->status == 1 && now()->format('H:i') < $lastOrderTime)
                     <form method="POST" action="{{ route('customer.daily_meals.cancel', $order->id) }}" class="cancel-order">
                         @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Cancel before {{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Cancel before {{ $lastOrderTime }}">
                             <i class="fa-solid fa-times"></i>
                         </button>
                     </form>

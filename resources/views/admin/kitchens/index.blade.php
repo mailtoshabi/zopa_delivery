@@ -108,7 +108,7 @@
                                                    </div>
                                                </div>
                                                @endif
-                                               <a href="{{ route('admin.kitchens.edit',encrypt($kitchen->id)) }}" class="">{{ $kitchen->name }} </a>
+                                               <a href="{{ route('admin.kitchens.edit',encrypt($kitchen->id)) }}" class="">{{ $kitchen->name }} - {{ $kitchen->display_name }} </a>
                                             </td>
 
                                            <td>{{ $kitchen->phone }}</td>
@@ -168,7 +168,7 @@
 <script src="{{ URL::asset('assets/libs/datatables.net/datatables.net.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script src="{{ URL::asset('assets/js/pages/datatable-pages.init.js') }}"></script>
 {{-- <script>
     $(document).ready(function() {

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Cart Checkout - Zopa Food Drop')
+@section('title', 'Cart Checkout - ' . config('app.name'))
 
 @section('content')
 <div class="container my-2">

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'My Wallet - Zopa Food Drop')
+@section('title', 'My Wallet - ' . config('app.name'))
 @section('content')
 <div class="container my-2">
     <div class="text-center mb-4">
@@ -18,46 +18,91 @@
                 <div class="card-header bg-light">
                     <h4 class="mb-3">Meal Wallet</h4>
                 </div>
-                <div class="card-body">
-                    @if($meal_wallet->status == 0)
-                        <div class="alert alert-warning d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>Inactive Wallet:</strong> Your meal wallet is currently inactive. Daily meals will not be delivered.
+
+                <small class="text-muted d-block mt-1 mb-3 mx-3">
+                    If you have meal balance, Daily Meal gets auto-delivered — no need to set a reminder or do anything.
+                    Just mark leave if you want to skip a day. Sundays are already off!
+                </small>
+                @if($meal_wallets->isNotEmpty())
+                    <div class="card-body">
+                        @foreach ($meal_wallets as $meal_wallet )
+                            <div class="row d-flex align-items-center" style="width: 100%;">
+                                <div class="col-sm-12 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        {{-- Meal Image --}}
+                                        <div class="position-relative me-3" style="width: 50px; height: 50px;">
+                                            <img src="{{ asset('front/images/meals.png') }}"
+                                                alt="Meals"
+                                                class="rounded me-3 shadow-sm {{ $meal_wallet->status == 0?'changetogrey':'' }}"
+                                                style="width: 50px; height: 50px; object-fit: cover;">
+                                            @if($meal_wallet->is_on && ($meal_wallets->count()>1))
+                                                <div class="position-absolute top-0 end-0" style="transform: translate(30%, -30%);">
+                                                    <span class="badge bg-secondary rounded-circle px-2 py-1"
+                                                        data-bs-toggle="tooltip"
+                                                        title="Default">
+                                                        <i class="fa-solid fa-star"></i>
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Wallet Info --}}
+                                        <span class="me-2 {{ $meal_wallet->status ? 'text-dark' : 'text-muted' }}">
+                                            {{ $meal_wallet->walletGroup->display_name }}
+                                        </span>
+                                        <span class="badge {{ $meal_wallet->status ? 'bg-success' : 'bg-secondary' }} rounded-pill">{{ $meal_wallet ? $meal_wallet->quantity : 0 }} left</span>&nbsp;
+                                        {{-- @if($mealsProcessingToday > 0)
+                                            <span class="badge bg-info rounded-pill ms-2">{{ $mealsProcessingToday }} processing</span>&nbsp;
+                                        @endif --}}
+
+                                        @if($meal_wallet->status == 0)
+                                            <span class="badge bg-danger rounded-pill">Suspended</span><span>&nbsp;&nbsp;<a href="{{ route('support') }}" >Contact Support</a></span>
+                                        @else
+                                             @if($meal_wallet->quantity < Utility::WALLET_LOW_BALANCE)
+                                                <span class="badge bg-danger rounded-pill">Low Balance</span><span>&nbsp;&nbsp;<a href="{{ route('front.meal.plan') }}" >Buy</a></span>
+                                            @endif
+                                        @endif
+                                    </div>
+
+                                    {{-- @if($meal_wallet->status == 0)
+                                        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>Inactive Wallet:</strong> Your meal wallet is currently inactive. Daily meals will not be delivered.
+                                            </div>
+                                            <a href="{{ route('support') }}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fa-solid fa-headset"></i> Contact Support
+                                            </a>
+                                        </div>
+                                    @endif --}}
+                                </div>
+
+                                {{-- <div class="col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end">
+                                    <a href="javascript:void(0);" class="btn btn-zopa extra-meal-btn">
+                                        <i class="fa-solid fa-plus-circle"></i> Request Extra Meal
+                                    </a>
+                                </div> --}}
                             </div>
-                            <a href="{{ route('support') }}" class="btn btn-sm btn-outline-danger">
-                                <i class="fa-solid fa-headset"></i> Contact Support
-                            </a>
-                        </div>
-                    @endif
-
-                    <small class="text-muted d-block mt-1 mb-3">
-                        If you have meal balance, Daily Meal gets auto-delivered — no need to set a reminder or do anything.<br>
-                        Just mark leave if you want to skip a day. Sundays are already off!
-                    </small>
-
-                    <div class="row d-flex align-items-center" style="width: 100%;">
-                        <div class="col-sm-12 col-md-6 mb-3 mb-md-0">
-                            <div class="d-flex align-items-center">
-                                {{-- Meal Image --}}
-                                <img src="{{ asset('front/images/meals.png') }}"
-                                    alt="Meals"
-                                    class="rounded me-3 shadow-sm"
-                                    style="width: 50px; height: 50px; object-fit: cover;">
-                                <span class="me-2 {{ $meal_wallet->status ? 'text-dark' : 'text-muted' }}">Meals</span>
-                                <span class="badge {{ $meal_wallet->status ? 'bg-success' : 'bg-secondary' }} rounded-pill">{{ $meal_wallet ? $meal_wallet->quantity : 0 }} left</span>
-                                @if($meal_wallet->quantity < Utility::WALLET_LOW_BALANCE)
-                                    <span class="badge bg-danger rounded-pill">Low Balance</span><span>&nbsp;&nbsp;<a href="{{ route('front.meal.plan') }}" >Buy Meals</a></span>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- <div class="col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end">
-                            <a href="javascript:void(0);" class="btn btn-zopa extra-meal-btn">
-                                <i class="fa-solid fa-plus-circle"></i> Request Extra Meal
-                            </a>
-                        </div> --}}
+                        @endforeach
                     </div>
-                </div>
+                    @if($meal_wallets->count()>1)
+                    <div class="text-end mt-2 mx-3 mb-3">
+                        <a href="javascript:void(0);" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#defaultMealModal" onclick="loadDefaultMealContent()">
+                            <i class="fa-solid fa-star"></i> Change Default
+                        </a>
+                    </div>
+                    @endif
+                @else
+                    <div class="card-body text-center">
+                        <p class="text-muted mt-3">
+                            You haven't purchased any Meals yet. Get started by purchasing our meals plans.
+                        </p>
+
+                        <a href="{{ route('front.meal.plan') }}" class="btn btn-zopa makeButtonDisable">
+                            <i class="fa-solid fa-plus-circle"></i>&nbsp;&nbsp;Buy Meal Plans
+                        </a>
+                    </div>
+                @endif
+
             </div>
         </div>
 
@@ -86,6 +131,16 @@
 
                         <ul class="list-group">
                             @foreach($addon_wallet as $item)
+
+                            @php
+                                $addonProcessingCount = \App\Models\DailyAddon::where('addon_id', $item->addon_id)
+                                    ->whereHas('dailyMeal', function ($query) use ($item) {
+                                        $query->where('customer_id', auth('customer')->id())
+                                            ->whereDate('created_at', \Carbon\Carbon::today())
+                                            ->where('status', 1)
+                                            ->where('is_delivered', 0);
+                                    })->sum('quantity');
+                            @endphp
                                 <li class="list-group-item d-flex align-items-center justify-content-between">
                                     <div class=" align-items-center">
                                         @if($item->addon->image_filename)
@@ -110,9 +165,10 @@
                                             <span class="badge bg-danger text-white ms-2">Suspended</span>
                                         @else
                                             <span class="addon-status-badge ms-2" data-id="{{ $item->id }}">
-                                                @if($item->is_on == 0)
-                                                    <span class="badge bg-warning text-dark">Inactive</span>
-                                                @endif
+                                                <span class="badge {{ $item->is_on ? 'bg-success' : 'bg-danger' }} text-white addon-status-text">
+                                                    {{ $item->is_on ? 'ON' : 'OFF' }}
+                                                </span>
+                                                <span class="spinner-border spinner-border-sm text-primary d-none addon-status-spinner" role="status" aria-hidden="true"></span>
                                             </span>
 
 
@@ -125,7 +181,9 @@
                                     {{-- Quantity Badge and Toggle --}}
                                     <div class="d-flex align-items-center">
                                         <span class="badge {{ $item->status ? 'bg-success' : 'bg-secondary' }} rounded-pill me-3">{{ $item->quantity }} left</span>
-
+                                        @if($addonProcessingCount > 0)
+                                            <span class="badge bg-info rounded-pill ms-2">{{ $addonProcessingCount }} processing</span>
+                                        @endif
                                         {{-- Toggle switch only --}}
                                         @if($item->status == 1)
                                             <div class="form-check form-switch">
@@ -159,7 +217,7 @@
         <div class="col-sm-12 mb-3">
             <div class="card shadow">
                 <div class="card-header bg-light">
-                    <h4 class="mb-3">Monthly Leaves Limit</h4>
+                    <h4 class="mb-3">Monthly Leaves</h4>
                 </div>
                 <div class="card-body text-center">
                     <a href="{{ route('customer.leave.index') }}" class="btn btn-zopa makeButtonDisable">
@@ -176,17 +234,28 @@
 
     </div>
 </div>
+
+@include('partials.make_default_modal', ['meal_wallets' => $meal_wallets])
+
 @endsection
 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-    const toggles = document.querySelectorAll('.addon-status-toggle');
+        const toggles = document.querySelectorAll('.addon-status-toggle');
 
         toggles.forEach(function(toggle) {
             toggle.addEventListener('change', function() {
                 const walletId = this.dataset.id;
                 const isOn = this.checked ? 1 : 0;
+
+                const badgeContainer = document.querySelector(`.addon-status-badge[data-id="${walletId}"]`);
+                const statusText = badgeContainer.querySelector('.addon-status-text');
+                const spinner = badgeContainer.querySelector('.addon-status-spinner');
+
+                // Show spinner and hide text
+                spinner.classList.remove('d-none');
+                statusText.classList.add('d-none');
 
                 fetch('{{ route('addonWallet.toggleStatus') }}', {
                     method: 'POST',
@@ -204,14 +273,8 @@
                 })
                 .then(data => {
                     if (data.success) {
-                        const badgeContainer = document.querySelector(`.addon-status-badge[data-id="${walletId}"]`);
-                        if (badgeContainer) {
-                            if (isOn === 1) {
-                                badgeContainer.innerHTML = '';
-                            } else {
-                                badgeContainer.innerHTML = '<span class="badge bg-warning text-dark">Inactive</span>';
-                            }
-                        }
+                        statusText.textContent = isOn === 1 ? 'ON' : 'OFF';
+                        statusText.className = `badge ${isOn ? 'bg-success' : 'bg-danger'} text-white addon-status-text`;
                     } else {
                         alert('Failed to update toggle.');
                         toggle.checked = !isOn;
@@ -220,6 +283,10 @@
                 .catch(() => {
                     alert('Something went wrong. Try again.');
                     toggle.checked = !isOn;
+                })
+                .finally(() => {
+                    spinner.classList.add('d-none');
+                    statusText.classList.remove('d-none');
                 });
             });
         });

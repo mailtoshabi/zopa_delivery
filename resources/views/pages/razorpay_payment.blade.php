@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Complete Your Payment')
+@section('title', 'Pay Online - ' . config('app.name'))
 
 @section('content')
 <div class="container my-4">
     <div class="text-center mb-4">
-        <h2 class="position-relative d-inline-block px-4 py-2">Complete Payment</h2>
+        <h2 class="position-relative d-inline-block px-4 py-2">Pay Online</h2>
         <div class="mt-1" style="width: 120px; height: 2px; background: #000000; margin: auto; border-radius: 2px;"></div>
     </div>
 
@@ -13,10 +13,11 @@
         <div class="col-md-8">
             <div class="card shadow">
                 <div class="card-body text-center">
-                    <p><strong>Total Amount to Pay:</strong></p>
-                    <h3 class="mb-4 text-primary">₹{{ number_format($grandTotal, 2) }}</h3>
+                    <h3 class="text-success mb-4">Invoice No: {{ $order->notes->invoice_no }}</h3>
+                    {{-- <p><strong>Total Amount to Pay:</strong></p> --}}
+                    {{-- <h3 class=" text-primary">₹{{ number_format($grandTotal, 2) }}</h3> --}}
 
-                    <button id="rzp-button" class="btn btn-success btn-lg">Pay Now</button>
+                    <button id="rzp-button" class="btn btn-success btn-lg">Pay ₹{{ number_format($grandTotal, 2) }} </button>
 
                     <p class="mt-3 text-muted">You will be redirected to Razorpay secure payment gateway.</p>
                 </div>
@@ -32,7 +33,7 @@
         "key": "{{ $razorpayKey }}",
         "amount": "{{ $grandTotal * 100 }}", // in paise
         "currency": "INR",
-        "name": "Zopa Food Drop",
+        "name": "{{ config('app.name') }}",
         "description": "Meal & Addon Purchase",
         "image": "{{ asset('front/images/logo_red.png') }}",
         "order_id": "{{ $order->id }}", // Razorpay order ID from backend

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Site Map - Zopa Food Drop')
+@section('title', 'Site Map - ' . config('app.name'))
 
 @section('content')
 <div class="container my-4">
@@ -49,7 +49,7 @@
                     <ul>
                         <li><strong>Mark Leave:</strong> Choose dates you don't want meals.</li>
                         <li><strong>Leave Limit:</strong> Max {{ Utility::MAX_LEAVE_DAYS_AHEAD }} days ahead.</li>
-                        <li><strong>Cutoff Time:</strong> Changes allowed only before {{ App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME) }}.</li>
+                        <li><strong>Cutoff Time:</strong> Changes allowed only before {{ $lastOrderTime }}.</li>
                     </ul>
                 </li>
 

@@ -13,7 +13,7 @@
                         <div class="d-flex flex-column h-100">
                             <div class="mb-4 text-center">
                                 <a href="{{ url('/') }}" class="d-block auth-logo">
-                                    <img src="{{ asset('front/images/logo_red.png') }}" alt="Zopa Food Drop" height="100">
+                                    <img src="{{ asset('front/images/logo_red.png') }}" alt="@appName" height="100">
                                     {{-- <span class="logo-txt">ZOPA</span> --}}
                                 </a>
                             </div>

@@ -2,7 +2,7 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
-                <h5 class="mb-1">Meal
+                <h5 class="mb-1">{{ $order->walletGroup->display_name }}
                     @if (!$order->is_auto && $type=="daily")
                         <small><span class="badge bg-primary"><i class="bi bi-check-circle me-1"></i> Extra ordered</span></small>
                     @endif

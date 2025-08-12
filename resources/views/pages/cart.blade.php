@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'My Cart')
+@section('title', 'My Cart - ' . config('app.name'))
 
 @section('content')
 <div class="container my-2">

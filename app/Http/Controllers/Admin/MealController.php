@@ -7,11 +7,14 @@ use App\Http\Requests\MealStoreRequest;
 use App\Http\Requests\MealUpdateRequest;
 use App\Http\Utilities\Utility;
 use App\Helpers\FileHelper;
+use App\Models\Category;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Meal;
 use App\Models\Ingredient;
+use App\Models\MessCategory;
 use App\Models\Remark;
+use App\Models\WalletGroup;
 
 class MealController extends Controller
 {
@@ -23,9 +26,12 @@ class MealController extends Controller
 
     public function create()
     {
+        $categories = Category::where('status', Utility::ITEM_ACTIVE)->get();
+        $mess_categories = MessCategory::where('status', Utility::ITEM_ACTIVE)->get();
+        $wallet_groups = WalletGroup::where('status', Utility::ITEM_ACTIVE)->get();
         $ingredients = Ingredient::where('status', Utility::ITEM_ACTIVE)->pluck('name', 'id');
         $remarks = Remark::where('status', Utility::ITEM_ACTIVE)->pluck('name', 'id');
-        return view('admin.meals.create', compact('ingredients','remarks'));
+        return view('admin.meals.create', compact('ingredients','remarks','categories','wallet_groups','mess_categories'));
     }
 
     public function store(MealStoreRequest $request)
@@ -55,10 +61,13 @@ class MealController extends Controller
 
     public function edit($id)
     {
+        $categories = Category::where('status', Utility::ITEM_ACTIVE)->get();
+        $mess_categories = MessCategory::where('status', Utility::ITEM_ACTIVE)->get();
+        $wallet_groups = WalletGroup::where('status', Utility::ITEM_ACTIVE)->get();
         $meal = Meal::findOrFail(decrypt($id));
         $ingredients = Ingredient::where('status', 1)->pluck('name', 'id');
         $remarks = Remark::where('status', Utility::ITEM_ACTIVE)->pluck('name', 'id');
-        return view('admin.meals.create', compact('meal', 'ingredients','remarks'));
+        return view('admin.meals.create', compact('meal', 'ingredients','remarks', 'categories','mess_categories','wallet_groups'));
     }
 
     public function update(MealUpdateRequest $request, $id)

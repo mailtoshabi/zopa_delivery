@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Confirm Addon Purchase - Zopa Food Drop')
+@section('title', 'Confirm Addon Purchase - ' . config('app.name'))
 
 @section('content')
 <style>
@@ -178,11 +178,36 @@
                     @error('pay_method') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div id="payment-message" class="form-text mt-2 text-muted mb-2"></div>
-                <button type="submit" class="btn btn-zopa w-100 mt-3">Confirm and Pay</button>
+                <button type="submit" id="proceed-button" class="btn btn-zopa w-100 d-none">
+                    Proceed to Payment
+                </button>
             </div>
         </div>
     </form>
 </div>
+
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title" id="confirmModalLabel">Confirm Purchase</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="confirmModalMessage">
+        Are you sure?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="confirmSubmitBtn" class="btn btn-primary">Yes, Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@endsection
+
+@push('scripts')
 
 <script>
     document.querySelectorAll('.qty-input').forEach(input => {
@@ -214,34 +239,66 @@
     // Payment method message toggle
     const payMethodSelect = document.getElementById('pay_method');
     const paymentMessageDiv = document.getElementById('payment-message');
+    const proceedButton = document.getElementById('proceed-button');
 
     const onlineMessage = "Your wallet will be credited instantly with addons after a successful online payment.";
     const codMessage = "Your wallet will be credited manually by an admin only after payment confirmation. Choose online payment for instant credit.";
 
-    payMethodSelect.addEventListener('change', function() {
-        const value = this.value;
-        paymentMessageDiv.classList.remove('info'); // clear before applying
+    function updatePaymentInfo() {
+        const value = payMethodSelect.value;
+        paymentMessageDiv.classList.remove('info');
+        proceedButton.classList.add('d-none'); // hide button by default
 
         if (value === '{{ Utility::PAYMENT_ONLINE }}') {
             paymentMessageDiv.textContent = onlineMessage;
             paymentMessageDiv.classList.add('info');
+            proceedButton.textContent = "Proceed to Payment";
+            proceedButton.classList.remove('d-none');
         } else if (value === '{{ Utility::PAYMENT_COD }}') {
             paymentMessageDiv.textContent = codMessage;
             paymentMessageDiv.classList.add('info');
+            proceedButton.textContent = "Confirm the Purchase";
+            proceedButton.classList.remove('d-none');
         } else {
             paymentMessageDiv.textContent = '';
         }
+    }
+
+    payMethodSelect.addEventListener('change', updatePaymentInfo);
+
+    // Optional: run once on page load
+    updatePaymentInfo();
+</script>
+<script>
+    let pendingForm = null;
+    let selectedMethod = '';
+
+    $('form').on('submit', function(e) {
+        e.preventDefault(); // prevent default for now
+        pendingForm = this;
+        selectedMethod = $('#pay_method').val();
+
+        if (!selectedMethod) {
+            alert("Please select a payment method.");
+            return false;
+        }
+
+        const msg = selectedMethod === '{{ Utility::PAYMENT_ONLINE }}'
+            ? "Are you sure you want to proceed with online payment?"
+            : "Are you sure you want to confirm this purchase for cash on delivery?";
+
+        $('#confirmModalMessage').text(msg);
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        confirmModal.show();
     });
-    </script>
 
-@endsection
-
-@push('scripts')
-    <script>
-        $(document).ready(function() {
-            $('form').on('submit', function() {
-                $(this).find('button[type=submit]').prop('disabled', true).text('Progress...');
-            });
-        });
-    </script>
+    $('#confirmSubmitBtn').on('click', function () {
+        if (pendingForm) {
+            $(pendingForm).find('button[type=submit]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Progress...');
+            pendingForm.submit();
+        }
+        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+        modalInstance.hide();
+    });
+</script>
 @endpush

@@ -15,7 +15,7 @@ class DailyMeal extends Model
     ];
 
     protected $fillable = [
-        'customer_id', 'quantity', 'is_delivered', 'date', 'status', 'is_auto', 'reason'
+        'customer_id', 'wallet_group_id', 'quantity', 'is_delivered', 'date', 'status', 'is_auto', 'reason'
     ];
 
     public function customer()
@@ -31,6 +31,11 @@ class DailyMeal extends Model
     public function dailyAddons()
     {
         return $this->hasMany(DailyAddon::class, 'daily_meal_id');
+    }
+
+    public function walletGroup()
+    {
+        return $this->belongsTo(WalletGroup::class, 'wallet_group_id');
     }
 
 }

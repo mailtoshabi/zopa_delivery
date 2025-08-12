@@ -3,6 +3,25 @@
 @section('css')
 <link href="{{ URL::asset('assets/libs/select2/select2.min.css') }}" rel="stylesheet">
 <link href="{{ URL::asset('assets/libs/dropzone/dropzone.min.css') }}" rel="stylesheet">
+<style>
+.file-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+.file-input-wrapper input[type="file"] {
+    width: 100%;
+    padding-right: 2.5rem; /* Make space for button */
+}
+.file-input-wrapper .btn-close {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    border: none;
+}
+</style>
 @endsection
 @section('content')
 @component('admin.dir_components.breadcrumb')
@@ -32,11 +51,11 @@
                                 <input id="name" name="name" type="text" class="form-control"  placeholder="@lang('translation.Name')" value="{{ isset($kitchen)?$kitchen->name:old('name')}}">
                                 @error('name') <p class="text-danger">{{ $message }}</p> @enderror
                             </div>
-                            {{-- <div class="mb-3">
-                                <label for="trade_name">@lang('translation.Office_Name')</label>
-                                <input id="trade_name" name="trade_name" type="text" class="form-control"  placeholder="@lang('translation.Office_Name')" value="{{ isset($kitchen)?$kitchen->trade_name:old('trade_name')}}">
-                                @error('trade_name') <p class="text-danger">{{ $message }}</p> @enderror
-                            </div> --}}
+                            <div class="mb-3">
+                                <label for="display_name">@lang('translation.Display_Name')</label>
+                                <input id="display_name" name="display_name" type="text" class="form-control"  placeholder="@lang('translation.Display_Name')" value="{{ isset($kitchen)?$kitchen->display_name:old('display_name')}}">
+                                @error('display_name') <p class="text-danger">{{ $message }}</p> @enderror
+                            </div>
                             <div class="mb-3 required">
                                 <label for="phone">Phone</label>
                                 <input id="phone" name="phone" type="text" class="form-control"  placeholder="Phone" value="{{ isset($kitchen)?$kitchen->phone:old('phone')}}">
@@ -102,6 +121,34 @@
                             </div> --}}
                         </div>
 
+                        <div class="col-sm-12 required">
+                            <label for="postal_code">Location</label>
+
+                            <!-- Input group for input + tooltip button -->
+                            <div class="input-group mb-2">
+                                <input type="text" id="autocomplete" placeholder="Enter location" class="form-control" value="{{ isset($kitchen)?$kitchen->location_name:old('location_name')}}">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    onclick="getCurrentLocation()"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="left"
+                                    title="Use current location">
+                                    📍
+                                </button>
+                            </div>
+
+                            <!-- Hidden fields -->
+                            <input type="hidden" name="latitude" id="latitude" value="{{ isset($kitchen)?$kitchen->latitude:old('latitude')}}">
+                            <input type="hidden" name="longitude" id="longitude" value="{{ isset($kitchen)?$kitchen->longitude:old('longitude')}}">
+                            <input type="hidden" name="location_name" id="location_name" value="{{ isset($kitchen)?$kitchen->location_name:old('location_name')}}">
+
+                            <!-- Map -->
+                            <div id="map" style="height: 300px; width: 100%; margin-top: 10px;"></div>
+                        </div>
+
+
+
 
                         {{--  --}}
                     </div>
@@ -110,37 +157,138 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h4 class="card-title mb-0">Image</h4>
-                    <p class="card-title-desc">Upload Image of your @lang('translation.Kitchen'), if any</p>
+                    <h4 class="card-title mb-0">Images & Documents</h4>
+                    {{-- <p class="card-title-desc">Upload Image of your @lang('translation.Kitchen'), if any</p> --}}
                 </div>
                 <div class="card-body">
 
                         <div class="row">
-                            <div class="col-sm-12">
-                                <div class="mb-3">
-                                    <span id="imageContainer" @if(isset($kitchen)&&empty($kitchen->image_filename)) style="display: none" @endif>
-                                        @if(isset($kitchen)&&!empty($kitchen->image_filename))
-                                            <img src="{{ Storage::url(App\Models\Kitchen::DIR_PUBLIC . '/' . $kitchen->image_filename) }}" alt="" class="avatar-xxl rounded-circle me-2">
-                                            <button type="button" class="btn-close" aria-label="Close"></button>
-                                        @endif
-                                    </span>
+                            <div class="col-sm-6 mb-3" id="imageWrap">
+                                <label class="form-label">Main Kitchen Image</label>
+                                <span id="imageContainer" @if(isset($kitchen)&&empty($kitchen->image_filename)) style="display: none" @endif>
+                                    @if(isset($kitchen)&&!empty($kitchen->image_filename))
+                                        <br><img src="{{ Storage::url(App\Models\Kitchen::DIR_PUBLIC . '/' . $kitchen->image_filename) }}" alt="" class="avatar-xxl rounded-circle me-2">
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                </span>
 
-                                    <span id="fileContainer" @if(isset($kitchen)&&!empty($kitchen->image_filename)) style="display: none" @endif>
-                                        <input id="image" name="image" type="file" class="form-control"  placeholder="File">
-                                        @if(isset($kitchen)&&!empty($kitchen->image_filename))
-                                            <button type="button" class="btn-close" aria-label="Close"></button>
-                                        @endif
-                                    </span>
-                                    <input name="isImageDelete" type="hidden" value="0">
-                                </div>
+                                <span id="fileContainer" @if(isset($kitchen)&&!empty($kitchen->image_filename)) style="display: none" @endif>
+                                    <div class="d-flex align-items-center gap-2">
+                                    <input id="image" name="image" type="file" class="form-control"  placeholder="File">
+                                    @if(isset($kitchen)&&!empty($kitchen->image_filename))
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                    </div>
+                                </span>
+                                <input name="isImageDelete" type="hidden" value="0">
                             </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Additional Images</label>
+                                <input type="file" name="additional_images[]" class="form-control" multiple>
+                                @if(!empty($meal->additional_images))
+                                    <div class="mt-2 d-flex flex-wrap gap-2">
+                                        @foreach(json_decode($meal->additional_images) as $image)
+                                            <img src="{{ asset('storage/meals/' . $image) }}" alt="additional" class="img-thumbnail" width="80">
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="col-sm-6 mb-3">
+                                <label for="license_number">License Number</label>
+                                <input id="license_number" name="license_number" type="text" class="form-control"  placeholder="License Number" value="{{ isset($kitchen)?$kitchen->license_number:old('license_number')}}">
+                                @error('license_number') <p class="text-danger">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div class="col-sm-6 mb-3" id="licenseWrap">
+                                <label class="form-label">License Document</label>
+                                <span id="license_fileImageDiv" @if(isset($kitchen)&&empty($kitchen->license_file)) style="display: none" @endif>
+                                    <div class="file-input-wrapper">
+                                    @if(isset($kitchen)&&!empty($kitchen->license_file))
+                                    <br><a target="_blank" href="{{ Storage::url(App\Models\Kitchen::DIR_PUBLIC_LICESNSE . '/' . $kitchen->license_file) }}">
+                                        View File <i class="fas fa-file"></i>
+                                    </a>
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                    </div>
+                                </span>
+                                <span id="license_fileInputDiv" @if(isset($kitchen)&&!empty($kitchen->license_file)) style="display: none" @endif>
+                                    <div class="file-input-wrapper">
+                                    <input id="license_file" name="license_file" type="file" class="form-control"  placeholder="File">
+                                    @if(isset($kitchen)&&!empty($kitchen->license_file))
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                    </div>
+                                </span>
+                                <input name="isLicenseDelete" type="hidden" value="0">
+                            </div>
+
+                            <div class="col-sm-6 mb-3">
+                                <label for="fssai_number">FSSAI Number</label>
+                                <input id="fssai_number" name="fssai_number" type="text" class="form-control"  placeholder="FSSAI Number" value="{{ isset($kitchen)?$kitchen->fssai_number:old('fssai_number')}}">
+                                @error('fssai_number') <p class="text-danger">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label">FSSAI Document</label>
+                                <span id="fssai_certificateImageDiv" @if(isset($kitchen)&&empty($kitchen->fssai_certificate)) style="display: none" @endif>
+                                    <div class="file-input-wrapper">
+                                    @if(isset($kitchen)&&!empty($kitchen->fssai_certificate))
+                                    <br><a target="_blank" href="{{ Storage::url(App\Models\Kitchen::DIR_PUBLIC_FSSAI . '/' . $kitchen->fssai_certificate) }}">
+                                        View File <i class="fas fa-file"></i>
+                                    </a>
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                    </div>
+                                </span>
+                                <span id="fssai_certificateInputDiv" @if(isset($kitchen)&&!empty($kitchen->fssai_certificate)) style="display: none" @endif>
+                                    <div class="file-input-wrapper">
+                                    <input id="fssai_certificate" name="fssai_certificate" type="file" class="form-control"  placeholder="File">
+                                    @if(isset($kitchen)&&!empty($kitchen->fssai_certificate))
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                    </div>
+                                </span>
+                                <input name="isfssai_certificateDelete" type="hidden" value="0">
+                            </div>
+
+                            <div class="col-sm-12 mb-3">
+                                <label class="form-label">Other Documents</label>
+                                <span id="other_documentsImageDiv" @if(isset($kitchen)&&empty($kitchen->other_documents)) style="display: none" @endif>
+                                    <div class="file-input-wrapper">
+                                    @if(isset($kitchen)&&!empty(json_decode($kitchen->other_documents, true)))
+                                    <br>
+                                    @foreach (json_decode($kitchen->other_documents) as $other_document )
+                                        <a target="_blank" href="{{ Storage::url(App\Models\Kitchen::DIR_PUBLIC_OTHDOC . '/' . $other_document) }}">
+                                            View File <i class="fas fa-file"></i>
+                                        </a>
+                                    @endforeach
+
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                    </div>
+                                </span>
+                                <span id="other_documentsInputDiv" @if(isset($kitchen)&&!empty($kitchen->other_documents)) style="display: none" @endif>
+                                    <div class="file-input-wrapper">
+                                    <input id="other_documents" name="other_documents[  ]" type="file" class="form-control"  placeholder="File" multiple>
+                                    @if(isset($kitchen)&&!empty($kitchen->other_documents))
+                                        <button type="button" class="btn-close" aria-label="Close">x</button>
+                                    @endif
+                                    </div>
+                                </span>
+                                <input name="isother_documentsDelete" type="hidden" value="0">
+                            </div>
+
+
                         </div>
 
                 </div>
 
             </div> <!-- end card-->
 
-            {{-- <div class="card">
+
+            <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">Login Information</h4>
                     <p class="card-title-desc">Fill all information below</p>
@@ -163,98 +311,7 @@
                         </div>
                     </div>
                 </div>
-            </div> --}}
-
-            {{-- <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Contact persons</h4>
-                    <p class="card-title-desc">Add details of contact person</p>
-                </div>
-                <div class="card-body" id="contact_persons_container">
-                    @isset($kitchen)
-                        @foreach ($kitchen->contactPersons as $index => $contactPerson)
-                            <div class="row close_container" id="close_container_{{ $index }}">
-
-                                <div class="col-sm-4">
-                                    <div class="mb-3">
-                                        <label>Name</label>
-                                        <input id="contact_names-{{ $index }}" name="contact_names[{{ $index }}]" type="text" class="form-control"  placeholder="Name" value="{{ $contactPerson->name }}">
-                                    </div>
-                                </div>
-                                <div class="col-sm-4">
-                                    <div class="mb-3">
-                                        <label>Phone</label>
-                                        <input id="phones-{{ $index }}" name="phones[{{ $index }}]" type="text" class="form-control"  placeholder="Phone" value="{{ $contactPerson->phone }}">
-                                    </div>
-                                </div>
-                                <div class="col-sm-3">
-                                    <div class="mb-3">
-                                        <label>Email</label>
-                                        <input id="emails-{{ $index }}" name="emails[{{ $index }}]" type="text" class="form-control"  placeholder="Email" value="{{ $contactPerson->email }}">
-                                    </div>
-                                </div>
-                                <a class="btn-close" data-target="#close_container_{{ $index }}"><i class="fa fa-trash"></i></a>
-                            </div>
-                        @endforeach
-
-                    @endisset
-                    @empty($kitchen)
-                        <div class="row">
-
-
-                            <div class="col-sm-4">
-                                <div class="mb-3">
-                                    <label for="contact_names">Name</label>
-                                    <input id="contact_names-0" name="contact_names[0]" type="text" class="form-control"  placeholder="Name" value="">
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="mb-3">
-                                    <label>Phone</label>
-                                    <input id="phones-0" name="phones[0]" type="text" class="form-control"  placeholder="Phone" value="">
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="mb-3">
-                                    <label>Email</label>
-                                    <input id="emails-0" name="emails[0]" type="text" class="form-control"  placeholder="Email" value="">
-                                </div>
-                            </div>
-                        </div>
-                    @endempty
-                </div>
-                <div class="p-4 pt-1">
-                    <a href="#" data-toggle="add-more" data-template="#template_contact_persons"
-                    data-close=".wb-close" data-container="#contact_persons_container"
-                    data-count="{{ isset($kitchen) ? $kitchen->contactPersons->count()-1 : 0 }}"
-                    data-addindex='[{"selector":".contact_names","attr":"name", "value":"contact_names"},{"selector":".phones","attr":"name", "value":"phones"},{"selector":".emails","attr":"name", "value":"emails"}]'
-                    data-increment='[{"selector":".contact_names","attr":"id", "value":"contact_names"},{"selector":".phones","attr":"id", "value":"phones"},{"selector":".emails","attr":"id", "value":"emails"}]'><i
-                                class="fa fa-plus-circle"></i>&nbsp;&nbsp;New Contact</a>
-                </div>
             </div>
-
-
-            <div class="row hidden" id="template_contact_persons">
-
-                <div class="col-sm-4">
-                    <div class="mb-3">
-                        <label>Name</label>
-                        <input id="" name="" type="text" class="form-control contact_names"  placeholder="Name" value="">
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="mb-3">
-                        <label>Phone</label>
-                        <input id="phones-0" name="" type="text" class="form-control phones"  placeholder="Phone" value="">
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="mb-3">
-                        <label>Email</label>
-                        <input id="" name="" type="text" class="form-control emails"  placeholder="Email" value="">
-                    </div>
-                </div>
-            </div> --}}
 
             <div class="card">
                 <div class="card-header">
@@ -273,7 +330,7 @@
 <script src="{{ URL::asset('assets/libs/select2/select2.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/dropzone/dropzone.min.js') }}"></script>
 <script src="{{ URL::asset('assets/js/pages/ecommerce-select2.init.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script>
     $(document).ready(function() {
         @if(isset($kitchen))
@@ -296,20 +353,22 @@
     }
 </script>
 <script>
-    $(document).ready(function() {
-        $('#imageContainer').find('button').click(function() {
-            $('#imageContainer').hide();
-            $('#fileContainer').show();
-            $('input[name="isImageDelete"]').val(1);
-        })
-
-        $('#fileContainer').find('button').click(function() {
-            $('#fileContainer').hide();
-            $('#imageContainer').show();
-            $('input[name="isImageDelete"]').val(0);
-        })
+$(function () {
+    $('#imageWrap .btn-close').click(function () {
+        $('#imageContainer, #fileContainer').toggle(); // Toggle both
+        const isVisible = $('#imageContainer').is(':visible');
+        $('[name="isImageDelete"]').val(isVisible ? 0 : 1);
     });
+
+    $('#licenseWrap .btn-close').click(function () {
+        $('#license_fileImageDiv, #license_fileInputDiv').toggle(); // Toggle both
+        const isVisible = $('#license_fileImageDiv').is(':visible');
+        $('[name="isLicenseDelete"]').val(isVisible ? 0 : 1);
+    });
+});
 </script>
+
+
 
 <script>
     $(document).ready(function() {
@@ -364,4 +423,100 @@
 
     })
 </script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlsEVjPfChYExnraJoKmt7aG7ItrPZ9TA&libraries=places&callback=initAutocomplete"
+  async
+  defer>
+</script>
+<script>
+    let map;
+    let marker;
+
+    function initAutocomplete() {
+        let input = document.getElementById('autocomplete');
+        let autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.setFields(['geometry', 'formatted_address']);
+
+        const defaultLat = 10.8505;  // Fallback default
+        const defaultLng = 76.2711;
+        const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
+        const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
+
+        // Initialize map
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: lat, lng: lng },
+            zoom: (lat !== defaultLat && lng !== defaultLng) ? 15 : 10
+        });
+
+        // Initialize marker
+        marker = new google.maps.Marker({
+            map: map,
+            position: { lat: lat, lng: lng },
+            draggable: true
+        });
+
+        // Update fields when marker is dragged
+        marker.addListener('dragend', function () {
+            const position = marker.getPosition();
+            document.getElementById('latitude').value = position.lat();
+            document.getElementById('longitude').value = position.lng();
+
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: position }, function (results, status) {
+                if (status === 'OK' && results[0]) {
+                    document.getElementById('location_name').value = results[0].formatted_address;
+                    document.getElementById('autocomplete').value = results[0].formatted_address;
+                }
+            });
+        });
+
+        // Handle autocomplete selection
+        autocomplete.addListener('place_changed', function () {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) return;
+
+            const location = place.geometry.location;
+            map.setCenter(location);
+            map.setZoom(15);
+            marker.setPosition(location);
+
+            document.getElementById('latitude').value = location.lat();
+            document.getElementById('longitude').value = location.lng();
+            document.getElementById('location_name').value = place.formatted_address;
+        });
+    }
+
+    // google.maps.event.addDomListener(window, 'load', initAutocomplete);
+
+
+
+    function getCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                const latlng = new google.maps.LatLng(lat, lng);
+                const geocoder = new google.maps.Geocoder();
+
+                geocoder.geocode({ location: latlng }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        document.getElementById('autocomplete').value = results[0].formatted_address;
+                        document.getElementById('latitude').value = lat;
+                        document.getElementById('longitude').value = lng;
+                        document.getElementById('location_name').value = results[0].formatted_address;
+
+                        map.setCenter(latlng);
+                        map.setZoom(15);
+                        marker.setPosition(latlng);
+                    }
+                });
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+</script>
+
 @endsection

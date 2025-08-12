@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Utilities\Utility;
 use App\Models\Addon;
 use App\Models\AddonWallet;
+use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Meal;
 use App\Models\MealWallet;
@@ -15,6 +16,7 @@ use App\Models\DailyAddon;
 use App\Models\DailyMeal;
 use App\Models\MealLeave;
 use App\Models\Feedback;
+use App\Models\MessCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -23,9 +25,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\App;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
@@ -48,6 +49,27 @@ class HomeController extends Controller
         $this->cutoffMinute = $cutoff['minute'];
     }
 
+     public function frontLang($lang)
+    {
+        $allowed = ['en', 'ml'];
+        if (!in_array($lang, $allowed)) {
+            abort(404);
+        }
+        if ($lang) {
+             App::setLocale($lang);
+            Session::put('locale', $lang);
+            Session::save();
+            if (Auth::guard('customer')->check()) {
+                $customer_id = Auth::guard('customer')->id();
+                $customer = Customer::findOrFail($customer_id);
+                $customer->language = $lang;
+                $customer->save();
+            }
+            return redirect()->back()->with('locale', $lang);
+        } else {
+            return redirect()->back();
+        }
+    }
      public function getDistrictList(Request $request)
     {
         $districts = DB::table('districts')
@@ -66,11 +88,37 @@ class HomeController extends Controller
         return $data;
     }
 
+    // public function showMeals($slug)
+    // {
+    //     $mess_category = MessCategory::where('slug', $slug)->firstOrFail();
+
+    //     $meals = Meal::withKitchenOverrides()
+    //         ->where('meals.status', Utility::ITEM_ACTIVE)
+    //         ->where('meals.mess_category_id', $mess_category->id)
+    //         ->with(['ingredients', 'remarks'])
+    //         ->get();
+
+    //     return view('pages.meal_plan', compact('meals', 'mess_category'));
+    // }
+
+    public function showMeals($slug)
+    {
+        $mess_category = MessCategory::where('slug', $slug)->firstOrFail();
+
+        $meals = Meal::withKitchenOverrides()
+            ->where('meals.status', Utility::ITEM_ACTIVE)
+            ->where('meals.mess_category_id', $mess_category->id)
+            ->with(['ingredients', 'remarks'])
+            ->get();
+
+        return view('pages.meal_plan', compact('meals', 'mess_category'));
+    }
+
     public function showMealPlans()
     {
         $meals = Meal::with(['ingredients', 'remarks'])
                 ->where('status', Utility::ITEM_ACTIVE)
-                ->where('id', '!=', Utility::SINGLE_MEAL_ID)
+                ->where('category_id', 1)
                 ->get();
 
         return view('pages.meal_plan', compact('meals'));
@@ -80,7 +128,7 @@ class HomeController extends Controller
     {
         $meal = Meal::with(['ingredients', 'remarks'])
                 ->where('status', Utility::ITEM_ACTIVE)
-                ->where('id', Utility::SINGLE_MEAL_ID)
+                ->where('category_id', 2)
                 ->first();
 
         return view('pages.single_meal', compact('meal'));
@@ -89,57 +137,73 @@ class HomeController extends Controller
     public function showMealPurchasePage($encryptedMealId)
     {
         try {
-            $mealId = Crypt::decrypt($encryptedMealId);
-            $meal = Meal::with(['ingredients', 'remarks'])->findOrFail($mealId);
-            $addons = Addon::where('status', Utility::ITEM_ACTIVE)->get();
+            $mealId = decrypt($encryptedMealId);
+
+            $meal = Meal::withKitchenOverrides($mealId)
+                ->with(['ingredients', 'remarks'])
+                ->firstOrFail();
+
+            if ($meal->status != Utility::ITEM_ACTIVE) {
+                abort(404);
+            }
+
+            // $addons = Addon::where('status', Utility::ITEM_ACTIVE)->get();
+            $addons = Addon::withKitchenOverrides()
+            ->having('status', Utility::ITEM_ACTIVE)
+            ->get();
 
             return view('pages.meal_purchase', compact('meal','addons'));
-
         } catch (DecryptException $e) {
-            abort(404); // or redirect with error
+            abort(404);
         }
     }
 
     public function purchaseMeal(Request $request, $meal_id)
     {
         $invoiceNo = $this->generateInvoiceNumber();
-        $meal = Meal::findOrFail(decrypt($meal_id));
+        $mealId = decrypt($meal_id);
+
+        $meal = Meal::withKitchenOverrides($mealId)->firstOrFail();
+
+        if ($meal->status != Utility::ITEM_ACTIVE) {
+            abort(404);
+        }
 
         $validated = $request->validate([
             'addons' => 'nullable|array',
             'addons.*.quantity' => 'nullable|integer|min:1',
-            'pay_method' => 'required|in:1,2',  // 1 = Online, 2 = Cash on Delivery
+            'pay_method' => 'required|in:1,2',
         ]);
 
         $customer = Auth::guard('customer')->user();
         $payMethod = $validated['pay_method'];
 
-        // $grandTotal = 0;
-
-        // Create the parent order
         $customerOrder = CustomerOrder::create([
             'invoice_no' => $invoiceNo,
             'customer_id' => $customer->id,
             'pay_method' => $payMethod,
             'discount' => 0,
             'delivery_charge' => 0,
-            'amount' => 0, // temporary, will update later
+            'amount' => 0,
             'ip_address' => $request->ip(),
-            'is_paid' => 0,
-            'status' => 1,
+            'is_paid' => Utility::ITEM_INACTIVE,
+            'status' => Utility::ITEM_INACTIVE,
         ]);
 
-        // Attach the meal
         $customerOrder->meals()->create([
             'meal_id' => $meal->id,
             'price' => $meal->price,
             'quantity' => $meal->quantity,
         ]);
 
-        // Attach addons if provided
         if (!empty($validated['addons'])) {
             $addonIds = array_keys($validated['addons']);
-            $addons = Addon::whereIn('id', $addonIds)->get()->keyBy('id');
+            // $addons = Addon::whereIn('id', $addonIds)->get()->keyBy('id');
+            $addons = Addon::withKitchenOverrides()
+            ->whereIn('addons.id', $addonIds)
+            ->having('status', '=', Utility::ITEM_ACTIVE)
+            ->get()
+            ->keyBy('id');
 
             foreach ($validated['addons'] as $addonId => $addonData) {
                 if (!isset($addons[$addonId])) continue;
@@ -153,11 +217,8 @@ class HomeController extends Controller
         }
 
         $grandTotal = $customerOrder->calculateTotal();
-
-        // Update total amount
         $customerOrder->update(['amount' => $grandTotal]);
 
-        // Razorpay payment
         if ($payMethod == Utility::PAYMENT_ONLINE) {
             $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
 
@@ -166,18 +227,16 @@ class HomeController extends Controller
                 'amount' => $grandTotal * 100,
                 'currency' => 'INR',
                 'payment_capture' => 1,
-                'notes'           => [
+                'notes' => [
                     'invoice_no' => $customerOrder->invoice_no,
                     'customer_name' => $customerOrder->customer->name,
                 ]
             ]);
 
-            // Save Razorpay order ID in DB
             $customerOrder->update([
                 'razorpay_order_id' => $razorpayOrder['id']
             ]);
 
-            // Also store in session (optional)
             Session::put('razorpay_order_id', $razorpayOrder['id']);
             Session::put('customer_order_id', $customerOrder->id);
 
@@ -214,21 +273,21 @@ class HomeController extends Controller
 
     public function showAddons()
     {
-        $addons = Addon::where('status', Utility::ITEM_ACTIVE)->get();
+        $addons = Addon::withKitchenOverrides()
+            // ->having('status', '=', Utility::ITEM_ACTIVE) // ✅ Fix ambiguity
+            ->where('addons.status', Utility::ITEM_ACTIVE)
+            ->get();
 
         return view('pages.buy_addons', compact('addons'));
     }
+
 
     public function showAddonPurchasePage(Request $request)
     {
         $validated = $request->validate([
             'addons' => 'required|array',
-            // 'addons.*.quantity' => 'required|integer|min:1',
-            // 'submit_action' => 'required|in:add_to_cart,checkout',
         ], [
             'addons.required' => 'Click on the addons to select',
-            // 'addons.*.quantity.required' => 'Please enter quantity for selected addon.',
-            // 'addons.*.quantity.integer' => 'Quantity must be a number.',
             'addons.*.quantity.min' => 'Quantity must be at least 1.',
         ]);
 
@@ -238,42 +297,22 @@ class HomeController extends Controller
             return redirect()->back()->withErrors(['Please select at least one addon.']);
         }
 
-        $addons = Addon::whereIn('id', $addonIds)->get()->map(function ($addon) use ($validated) {
-            $addon->selected_quantity = $validated['addons'][$addon->id]['quantity'];
-            return $addon;
-        });
+        $addons = Addon::withKitchenOverrides()
+            ->whereIn('addons.id', $addonIds)
+            ->having('status', '=', Utility::ITEM_ACTIVE) // ✅ Fix ambiguity
+            ->get()
+            ->map(function ($addon) use ($validated) {
+                $addon->selected_quantity = $validated['addons'][$addon->id]['quantity'];
+                return $addon;
+            });
 
-        // if ($request->submit_action === 'add_to_cart') {
-        //     $cart = session()->get('addon_cart', []);
-
-        //     foreach ($addons as $addon) {
-        //         if (isset($cart[$addon->id])) {
-        //             $cart[$addon->id]['quantity'] += $addon->selected_quantity;
-        //         } else {
-        //             $cart[$addon->id] = [
-        //                 'name' => $addon->name,
-        //                 'price' => $addon->price,
-        //                 'quantity' => $addon->selected_quantity,
-        //             ];
-        //         }
-        //     }
-
-        //     session()->put('addon_cart', $cart);
-
-        //     return redirect()->route('cart.index')->with('success', 'Addons added to cart!');
-        // }
-
-        // if ($request->submit_action === 'checkout') {
-            return view('pages.addon_purchase', compact('addons'));
-        // }
-
-        abort(400); // Should not reach here
+        return view('pages.addon_purchase', compact('addons'));
     }
 
     public function addonPurchase(Request $request)
     {
-
         $invoiceNo = $this->generateInvoiceNumber();
+
         $validated = $request->validate([
             'addons' => 'required|array',
             'addons.*.quantity' => 'required|integer|min:1',
@@ -283,10 +322,15 @@ class HomeController extends Controller
             'addons.*.quantity.integer' => 'Quantity must be a number.',
             'addons.*.quantity.min' => 'Quantity must be at least 1.',
         ]);
-        // return "Hello";
 
         $addonIds = array_keys($validated['addons']);
-        $addons = Addon::whereIn('id', $addonIds)->get()->keyBy('id');
+
+        // ✅ Kitchen-specific overrides + active filter
+        $addons = Addon::withKitchenOverrides()
+            ->whereIn('addons.id', $addonIds)
+            ->having('status', '=', Utility::ITEM_ACTIVE)
+            ->get()
+            ->keyBy('id');
 
         if ($addons->isEmpty()) {
             return redirect()->route('addons.buy')->withErrors(['Invalid addon selection.']);
@@ -295,37 +339,31 @@ class HomeController extends Controller
         $customer = Auth::guard('customer')->user();
         $payMethod = $validated['pay_method'];
 
-        // Step 1. Create CustomerOrder (the parent order)
         $customerOrder = CustomerOrder::create([
             'invoice_no' => $invoiceNo,
             'customer_id' => $customer->id,
             'pay_method' => $payMethod,
-            'discount' => 0,              // No discount for single meal (adjust if needed)
-            'delivery_charge' => 0,       // No delivery charge (adjust if needed)
-            'amount' => 0, // temporary, will update later
+            'discount' => 0,
+            'delivery_charge' => 0,
+            'amount' => 0,
             'ip_address' => $request->ip(),
-            'is_paid' => 0,               // Not paid yet
-            'status' => 0,                // Active
+            'is_paid' => Utility::ITEM_INACTIVE,
+            'status' => Utility::ITEM_INACTIVE,
         ]);
 
         foreach ($validated['addons'] as $addonId => $addonData) {
-            if (!isset($addons[$addonId])) {
-                continue;
-            }
-            // Step 2. Attach the addons into customer_addon (under the created order)
+            if (!isset($addons[$addonId])) continue;
+
             $customerOrder->addons()->create([
                 'addon_id' => $addonId,
                 'quantity' => $addonData['quantity'],
-                'price' => $addons[$addonId]->price,
+                'price' => $addons[$addonId]->price, // ✅ kitchen override price
             ]);
         }
 
         $grandTotal = $customerOrder->calculateTotal();
-
-        // Update total amount
         $customerOrder->update(['amount' => $grandTotal]);
 
-        // Razorpay payment
         if ($payMethod == Utility::PAYMENT_ONLINE) {
             $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
 
@@ -334,18 +372,16 @@ class HomeController extends Controller
                 'amount' => $grandTotal * 100,
                 'currency' => 'INR',
                 'payment_capture' => 1,
-                'notes'           => [
+                'notes' => [
                     'invoice_no' => $customerOrder->invoice_no,
                     'customer_name' => $customerOrder->customer->name,
                 ]
             ]);
 
-            // Save Razorpay order ID in DB
             $customerOrder->update([
                 'razorpay_order_id' => $razorpayOrder['id']
             ]);
 
-            // Also store in session (optional)
             Session::put('razorpay_order_id', $razorpayOrder['id']);
             Session::put('customer_order_id', $customerOrder->id);
 
@@ -357,13 +393,6 @@ class HomeController extends Controller
             ]);
         }
 
-        // Show confirmation
-        // return view('pages.addon_payment_success', [
-        //     'addons' => $addons,
-        //     'customerOrder'=>$customerOrder,
-        //     'quantities' => $validated['addons'],
-        //     'payment_method' => $validated['pay_method'],
-        // ]);
         return redirect()->route('addons.payment.success', encrypt($customerOrder->id));
     }
 
@@ -425,13 +454,45 @@ class HomeController extends Controller
         return view('pages.purchases', compact('purchases'));
     }
 
+    public function payLater($id) {
+        $orderId = decrypt($id);
+        $order = CustomerOrder::findOrFail($orderId);
+        // if ($payMethod == Utility::PAYMENT_ONLINE) {
+            $api = new Api(config('services.razorpay.key'), config('services.razorpay.secret'));
+
+            $razorpayOrder = $api->order->create([
+                'receipt' => $order->invoice_no,
+                'amount' => ($order->amount) * 100,
+                'currency' => 'INR',
+                'payment_capture' => 1,
+                'notes' => [
+                    'invoice_no' => $order->invoice_no,
+                    'customer_name' => $order->customer->name,
+                ]
+            ]);
+
+            $order->update([
+                'razorpay_order_id' => $razorpayOrder['id']
+            ]);
+
+            Session::put('razorpay_order_id', $razorpayOrder['id']);
+            Session::put('customer_order_id', $order->id);
+
+            return view('pages.razorpay_payment', [
+                'order' => $razorpayOrder,
+                'customer' => $order->customer,
+                'razorpayKey' => config('services.razorpay.key'),
+                'grandTotal' => $order->amount,
+            ]);
+        // }
+    }
+
     public function myWallet()
     {
         $customerId = Auth::guard('customer')->id();
 
         // Meal Wallet
-        $meal_wallet = MealWallet::where('customer_id', $customerId)->first();
-        $mealsLeft = $meal_wallet ? $meal_wallet->quantity : 0;
+        $meal_wallets = MealWallet::where('customer_id', $customerId)->get();
 
         // Addon Wallet — fetch addon_wallet records where status is active
         $addon_wallet = AddonWallet::where('customer_id', $customerId)
@@ -465,10 +526,55 @@ class HomeController extends Controller
 
         $maxActiveLeaves = Utility::MAX_ACTIVE_LEAVES;
 
-        return view('pages.my_wallet', compact('mealsLeft', 'meal_wallet', 'addon_wallet', 'monthlyLeaveCount', 'maxLeaves','activeLeaveCount','maxActiveLeaves'));
+        // Meals processing today
+        // $mealsProcessingToday = DailyMeal::where('customer_id', $customerId)
+        //     ->whereDate('created_at', $today)
+        //     ->where('status', 1)
+        //     ->where('is_delivered', 0)
+        //     ->sum('quantity');
+
+        // Addons processing today
+        // $addonsProcessingToday = DailyAddon::whereHas('dailyMeal', function ($query) use ($customerId, $today) {
+        //     $query->where('customer_id', $customerId)
+        //         ->whereDate('created_at', $today)
+        //         ->where('status', 1);
+        // })->sum('quantity');
+
+        return view('pages.my_wallet', compact('meal_wallets', 'addon_wallet', 'monthlyLeaveCount', 'maxLeaves','activeLeaveCount','maxActiveLeaves'));
     }
 
+    public function makeDefault(Request $request)
+    {
+        $customer = auth()->guard('customer')->user(); // or however you're authenticating
+        $walletId = $request->input('wallet_id');
 
+        // Safety: Ensure the wallet belongs to this customer
+        $wallet = MealWallet::where('id', $walletId)
+                            ->where('customer_id', $customer->id)
+                            ->first();
+
+        if (!$wallet) {
+            return response()->json(['success' => false, 'message' => 'Invalid wallet.']);
+        }
+
+        if ($wallet->quantity==0) {
+            return response()->json(['success' => false, 'message' => 'Wallet is Empty.']);
+        }
+
+        if (!$wallet->status) {
+            return response()->json(['success' => false, 'message' => 'Wallet is Inactive.']);
+        }
+
+        // Reset all others to not default
+        MealWallet::where('customer_id', $customer->id)
+                ->update(['is_on' => 0]);
+
+        // Set the selected one to default
+        $wallet->is_on = 1;
+        $wallet->save();
+
+        return response()->json(['success' => true, 'message' => 'Default wallet updated.']);
+    }
 
     // public function dailyOrders(Request $request)
     // {
@@ -526,14 +632,17 @@ class HomeController extends Controller
         ->whereDate('leave_at', Carbon::today())
         ->exists();
 
-        $meal_wallet = MealWallet::where('customer_id', $customerId)->first();
-        $mealsLeft = $meal_wallet ? $meal_wallet->quantity : 0;
+        $meal_wallets = MealWallet::where('customer_id', $customerId)->where('status',Utility::ITEM_ACTIVE)->get();
+        $default_wallet = MealWallet::where('customer_id', $customerId)->where('is_on',Utility::ITEM_ACTIVE)->first();
+        $mealsLeft = $default_wallet ? $default_wallet->quantity : 0;
 
         return view('pages.daily_meals', [
             'type' => 'daily',
             'todayOrders' => $todayOrders,
             'cutoffTime' => $cutoffTime,
+            'meal_wallets' => $meal_wallets,
             'mealsLeft' => $mealsLeft,
+            'default_wallet' => $default_wallet,
             'hasLeaveToday' => $hasLeaveToday,
         ]);
     }
@@ -572,7 +681,7 @@ class HomeController extends Controller
         $cutoffTime = now()->setTime($this->cutoffHour, $this->cutoffMinute);
 
         if ($dailyMeal->date->isToday() && $currentTime->greaterThan($cutoffTime)) {
-            $message = 'Cancellation is only allowed before ' . FileHelper::convertTo12Hour(Utility::CUTOFF_TIME);
+            $message = 'Cancellation is only allowed before ' . FileHelper::convertTo12Hour($customer->cutoff_time);
 
             if ($request->ajax()) {
                 return response()->json([
@@ -658,7 +767,7 @@ class HomeController extends Controller
             if (now()->greaterThan($cutoffTime)) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Extra meal requests for today are only allowed before ' . FileHelper::convertTo12Hour(Utility::CUTOFF_TIME)
+                    'message' => 'Extra meal requests for today are only allowed before ' . FileHelper::convertTo12Hour($customer->cutoff_time)
                 ], 422);
             }
         }
@@ -772,27 +881,10 @@ public function markLeaves(Request $request)
         'date' => 'required|date|after_or_equal:today',
     ]);
 
-    $date = Carbon::parse($request->date);
+    $date = Carbon::createFromFormat('d-m-Y', $request->date)->startOfDay();
     $now = now();
     $today = $now->copy()->startOfDay();
-    $cutoffTime = $now->copy()->setTime($this->cutoffHour, $this->cutoffMinute, 0);
-
-    // ✅ Allow leave only for next specific days
-    $maxAllowedDate = $now->copy()->addDays(Utility::MAX_LEAVE_DAYS_AHEAD);
-    if ($date->greaterThan($maxAllowedDate)) {
-        return redirect()->back()->with('error', 'You can only mark leave for the next '. Utility::MAX_LEAVE_DAYS_AHEAD .' days.');
-    }
-
-    if ($date->isSunday()) {
-        return redirect()->back()->with('error', "Sundays are already off. You don't need to mark leave.");
-    }
-
-    // ✅ Prevent marking leave for today after cutoff time
-    if ($date->isToday()) {
-        if ($now->format('H:i') > $cutoffTime->format('H:i')) {
-            return redirect()->back()->with('error', 'Cannot mark leave for today after ' . FileHelper::convertTo12Hour(Utility::CUTOFF_TIME));
-        }
-    }
+    $cutoffTime = now()->setTime($this->cutoffHour, $this->cutoffMinute);
 
     $customer = auth('customer')->user();
 
@@ -800,12 +892,34 @@ public function markLeaves(Request $request)
     $leaveMonthStart = $date->copy()->startOfMonth();
     $leaveMonthEnd = $date->copy()->endOfMonth();
 
+    if ($date->isToday() && $now->gt($cutoffTime)) {
+        return $request->ajax()
+            ? response()->json(['success' => false, 'message' => 'Cannot mark leave for today after cutoff time.'])
+            : back()->with('error', 'Cannot mark leave for today after cutoff time.');
+    }
+
+    if ($date->isPast()) {
+        return $request->ajax()
+            ? response()->json(['success' => false, 'message' => 'Cannot mark Leave for past dates.'])
+            : back()->with('error', 'Cannot mark Leave for past dates.');
+    }
+
+    if ($date->isSunday()) {
+            return $request->ajax()
+                ? response()->json(['success' => false, 'message' => 'Sundays are not allowed.'])
+                : back()->with('error', 'Sundays are not allowed.');
+        }
+
     $monthlyLeaveCount = MealLeave::where('customer_id', $customer->id)
         ->whereBetween('leave_at', [$leaveMonthStart, $leaveMonthEnd])
         ->count();
 
     if ($monthlyLeaveCount >= Utility::MAX_MONTHLY_LEAVES) {
-        return redirect()->back()->with('error', 'You can only mark up to ' . Utility::MAX_MONTHLY_LEAVES . ' leaves in ' . $date->format('F') . '.');
+        // return redirect()->back()->with('error', 'You can only mark up to ' . Utility::MAX_MONTHLY_LEAVES . ' leaves in ' . $date->format('F') . '.');
+
+        return $request->ajax()
+            ? response()->json(['success' => false, 'message' => 'You can only mark up to ' . Utility::MAX_MONTHLY_LEAVES . ' leaves in ' . $date->format('F') . '.'])
+            : redirect()->back()->with('error', 'You can only mark up to ' . Utility::MAX_MONTHLY_LEAVES . ' leaves in ' . $date->format('F') . '.');
     }
 
     // ✅ Max 5 active leaves at any time
@@ -824,7 +938,11 @@ public function markLeaves(Request $request)
     }
 
     if ($activeLeaveCount >= Utility::MAX_ACTIVE_LEAVES) {
-        return redirect()->back()->with('error', 'You can only have up to ' . Utility::MAX_ACTIVE_LEAVES . ' active leaves at a time.');
+        // return redirect()->back()->with('error', 'You can only have up to ' . Utility::MAX_ACTIVE_LEAVES . ' active leaves at a time.');
+
+        return $request->ajax()
+            ? response()->json(['success' => false, 'message' => 'You can only have up to ' . Utility::MAX_ACTIVE_LEAVES . ' active leaves at a time.'])
+            : redirect()->back()->with('error', 'You can only have up to ' . Utility::MAX_ACTIVE_LEAVES . ' active leaves at a time.');
     }
 
     // ✅ Prevent duplicate leave
@@ -833,7 +951,11 @@ public function markLeaves(Request $request)
         ->exists();
 
     if ($alreadyExists) {
-        return redirect()->back()->with('error', 'You have already marked leave for this date.');
+        // return redirect()->back()->with('error', 'You have already marked leave for this date.');
+
+        return $request->ajax()
+            ? response()->json(['success' => false, 'message' => 'You have already marked leave for this date.'])
+            : redirect()->back()->with('error', 'You have already marked leave for this date.');
     }
 
     MealLeave::create([
@@ -841,6 +963,11 @@ public function markLeaves(Request $request)
         'leave_at' => $date,
     ]);
 
+    if ($request->ajax()) {
+        return response()->json([
+            'success' => true,
+        ]);
+    }
     return redirect()->back()->with('success', 'Leave marked successfully.');
 }
 
@@ -860,7 +987,7 @@ public function destroyLeave($id)
 
         // Compare only time (hour & minute)
         if ($now->format('H:i') > $cutoffTime->format('H:i')) {
-            return redirect()->back()->with('error', 'Cannot cancel today\'s leave after ' . FileHelper::convertTo12Hour(Utility::CUTOFF_TIME));
+            return redirect()->back()->with('error', 'Cannot cancel today\'s leave after ' . FileHelper::convertTo12Hour($customer->cutoff_time));
         }
     }
 
@@ -894,24 +1021,45 @@ public function toggleStatus(Request $request)
 
 public function about_us()
     {
-        return view('pages.about_us');
+        if(app()->getLocale() === 'ml') {
+            return view('pages.about_us_ml');
+        }else {
+            return view('pages.about_us');
+        }
     }
 public function payment_terms()
     {
-        return view('pages.payment_terms');
+        if(app()->getLocale() === 'ml') {
+            return view('pages.payment_terms_ml');
+        }else {
+            return view('pages.payment_terms');
+        }
     }
 public function privacy_policy()
     {
-        return view('pages.privacy_policy');
+        if(app()->getLocale() === 'ml') {
+            return view('pages.privacy_policy_ml');
+        }else {
+            return view('pages.privacy_policy');
+        }
     }
 public function support()
     {
-        return view('pages.support');
+        if(app()->getLocale() === 'ml') {
+            return view('pages.support_ml');
+        }else {
+            return view('pages.support');
+        }
     }
 public function faq()
     {
-        return view('pages.faq');
+        if(app()->getLocale() === 'ml') {
+            return view('pages.faq_ml');
+        }else {
+            return view('pages.faq');
+        }
     }
+
 public function profile()
     {
         $customer = auth('customer')->user();
@@ -934,8 +1082,12 @@ public function updateProfile(Request $request)
         'whatsapp' => 'nullable|string|max:15',
         'city' => 'required|string|max:255',
         'landmark' => 'nullable|string|max:255',
-        'postal_code' => 'required|string|max:6',
+        // 'postal_code' => 'required|string|max:6',
         'image' => 'nullable',
+        'language' => 'required',
+        'latitude'         => 'required',
+        'longitude'         => 'required',
+        'location_name'         => 'required',
         // 'state_id' => 'required|exists:states,id',
         // 'district_id' => 'required|exists:districts,id',
     ];
@@ -946,14 +1098,18 @@ public function updateProfile(Request $request)
         'name.max' => 'Name should not exceed 255 characters.',
         'office_name.required' => 'Please enter your office or company name.',
         'city.required' => 'City is required.',
-        'postal_code.required' => 'Please enter your postal code.',
+        // 'postal_code.required' => 'Please enter your postal code.',
         'postal_code.max' => 'Postal code must be under 6 characters.',
         'image.image' => 'Uploaded file must be an image.',
         // 'image.max' => 'Image size should not exceed 512KB.',
+        'language.required' => 'Language is required.',
+        'location_name.required'         => 'Location is required',
     ];
 
     $validated = $request->validate($rules, $messages);
-
+    $postal_code = get_postal_code($request->latitude, $request->longitude);
+    $validated['postal_code'] = $postal_code;
+    $validated['kitchen_id'] = decrypt($request->kitchen_id);
     // Update basic fields
     $customer->update($validated);
 
@@ -1036,9 +1192,9 @@ private function handleImageUpload(Request $request, string $name): string
 }
 
     public function showChangePasswordForm()
-{
-    return view('pages.change_password');
-}
+    {
+        return view('pages.change_password');
+    }
 
 public function updatePassword(Request $request)
 {
@@ -1097,11 +1253,19 @@ public function downloadHowToUse()
 
 public function how_to_use()
     {
-        return view('pages.how_to_use');
+        if(app()->getLocale() === 'ml') {
+            return view('pages.how_to_use_ml');
+        }else {
+            return view('pages.how_to_use');
+        }
     }
 public function site_map()
     {
-        return view('pages.site_map');
+        if(app()->getLocale() === 'ml') {
+            return view('pages.site_map_ml');
+        }else {
+            return view('pages.site_map');
+        }
     }
 
 }

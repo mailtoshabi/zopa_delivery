@@ -24,6 +24,20 @@
                 @if ($user->hasRole(['Administrator', 'Manager']))
                     <li>
                         <a href="javascript:void(0);" class="has-arrow">
+                            <i class="fas fa-concierge-bell"></i>
+                            <span data-key="t-email">
+                                Meals
+                            </span>
+                        </a>
+                        <ul class="sub-menu" aria-expanded="false">
+                            <li><a href="{{ route('admin.daily_meals.index') }}">Today's Meals</a></li>
+                            <li><a href="{{ route('admin.daily_meals.extra') }}">Extra Meals</a></li>
+                            <li><a href="{{ route('admin.daily_meals.previous') }}">Archived Meals</a></li>
+                        </ul>
+                    </li>
+
+                    <li>
+                        <a href="{{ route('admin.orders.index') }}" class="">
                             <i class="fas fa-boxes"></i>
                             <span data-key="t-email">
                                 Orders
@@ -32,12 +46,6 @@
                                 @endif
                             </span>
                         </a>
-                        <ul class="sub-menu" aria-expanded="false">
-                            <li><a href="{{ route('admin.daily_meals.index') }}">Today's Meals</a></li>
-                            <li><a href="{{ route('admin.daily_meals.extra') }}">Extra Meals</a></li>
-                            <li><a href="{{ route('admin.daily_meals.previous') }}">Archived Meals</a></li>
-                            <li><a href="{{ route('admin.orders.index') }}">Customer Orders</a></li>
-                        </ul>
                     </li>
 
                     <li>
@@ -48,6 +56,7 @@
                         <ul class="sub-menu" aria-expanded="false">
                             <li><a href="{{ route('admin.customers.wallets') }}">Meals Wallet</a></li>
                             <li><a href="{{ route('admin.customers.addon.wallets') }}">Addon Wallet</a></li>
+                            <li><a href="{{ route('admin.wallet_groups.index') }}">@lang('translation.Wallet_Group_Manage')</a></li>
                         </ul>
                     </li>
 
@@ -64,6 +73,13 @@
                         <a href="{{ route('admin.categories.index') }}">
                             <i class="fas fa-coins"></i>
                             <span data-key="t-email">@lang('translation.Category_Manage')</span>
+                        </a>
+                    </li>
+
+                    <li class="{{ set_active(['admin.mess_categories.edit', 'admin.mess_categories.create']) }}">
+                        <a href="{{ route('admin.mess_categories.index') }}">
+                            <i class="fas fa-coins"></i>
+                            <span data-key="t-email">@lang('translation.MessCategory_Manage')</span>
                         </a>
                     </li>
 

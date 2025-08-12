@@ -1,6 +1,6 @@
 @extends('layouts.out')
 
-@section('title', 'Login via OTP - Zopa Food Drop')
+@section('title', 'Login via OTP - ' . config('app.name'))
 
 @section('content')
 <div class="container d-flex align-items-center justify-content-center min-vh-100 py-4">
@@ -8,7 +8,7 @@
         <div class="card-body">
             <div class="text-center mb-4 logo_bg pb-4 pt-4">
                 <a href="{{ route('index') }}">
-                    <img src="{{ asset('front/images/logo.png') }}" alt="Zopa Food Drop" style="height: 100px;">
+                    <img src="{{ asset('front/images/logo.png') }}" alt="@appName" style="height: 100px;">
                 </a>
             </div>
 
@@ -81,11 +81,21 @@
     const MAX_RESEND = 3;
     let timerInterval;
 
-    window.onload = function() {
-        recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-            size: 'invisible'
-        });
-    }
+    window.onload = function () {
+    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        size: 'invisible',
+        callback: function (response) {
+            // reCAPTCHA solved, allow sendOtp()
+        },
+        'expired-callback': function () {
+            alert('reCAPTCHA expired. Please try again.');
+        }
+    });
+
+    recaptchaVerifier.render().then(function (widgetId) {
+        window.recaptchaWidgetId = widgetId;
+    });
+};
 
     function showLoading(show = true) {
         document.getElementById("loading-overlay").style.display = show ? "block" : "none";

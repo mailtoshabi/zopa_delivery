@@ -30,7 +30,6 @@ class Category extends Model
         ->setDescriptionForEvent(fn(string $eventName) => "The Category has been {$eventName}");
     }
 
-
     public function scopeActive($query) {
         return $query->where('status',Utility::ITEM_ACTIVE);
     }
@@ -39,9 +38,9 @@ class Category extends Model
         return $query->orderBy('id', 'asc');
     }
 
-    public function products()
+    public function meals()
     {
-        return $this->hasMany(Product::class);
+        return $this->hasMany(Meal::class);
     }
 
 }

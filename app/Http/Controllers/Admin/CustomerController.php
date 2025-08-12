@@ -20,13 +20,20 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::orderBy('id', 'desc')->paginate(Utility::PAGINATE_COUNT);
-        return view('admin.customers.index', compact('customers'));
+        $individuals = Customer::where('customer_type', 'individual')
+            ->orderBy('id', 'desc')
+            ->paginate(Utility::PAGINATE_COUNT, ['*'], 'individuals');
+
+        $institutions = Customer::where('customer_type', 'institution')
+            ->orderBy('id', 'desc')
+            ->paginate(Utility::PAGINATE_COUNT, ['*'], 'institutions');
+
+        return view('admin.customers.index', compact('individuals', 'institutions'));
     }
 
     public function create()
     {
-        $kitchens = Kitchen::select('id', 'name')->get();
+        $kitchens = Kitchen::select('id', 'display_name')->get();
         $states = DB::table('states')->orderBy('name', 'asc')->select('id', 'name')->get();
         return view('admin.customers.create', compact('kitchens', 'states'));
     }
@@ -58,7 +65,7 @@ class CustomerController extends Controller
     public function edit($id)
     {
         $customer = Customer::findOrFail(decrypt($id));
-        $kitchens = Kitchen::select('id', 'name')->get();
+        $kitchens = Kitchen::select('id', 'display_name')->get();
         $states = DB::table('states')->orderBy('name', 'asc')->select('id', 'name')->get();
         return view('admin.customers.create', compact('customer', 'kitchens', 'states'));
     }
@@ -116,30 +123,81 @@ class CustomerController extends Controller
         return $fileName;
     }
 
-    public function wallets()
+    public function wallets(Request $request)
     {
-        $wallets = MealWallet::with('customer')
-                    ->orderBy('quantity', 'asc')
-                    ->paginate(Utility::PAGINATE_COUNT);
+        $query = MealWallet::with(['customer', 'walletGroup']);
 
-        return view('admin.wallets.index', compact('wallets'));
+        $selectedCustomerId = null;
+
+        if ($request->filled('customer_id')) {
+            try {
+                $selectedCustomerId = decrypt($request->customer_id);
+                $query->where('customer_id', $selectedCustomerId);
+            } catch (\Exception $e) {
+                // optional: flash error or ignore
+            }
+        }
+
+        $wallets = $query->orderBy('quantity', 'asc')->paginate(Utility::PAGINATE_COUNT);
+        $customers = Customer::orderBy('name')->get(['id', 'name', 'phone']);
+
+        return view('admin.wallets.index', compact('wallets', 'customers', 'selectedCustomerId'));
     }
 
-    public function addon_wallets()
-    {
-        $wallets = AddonWallet::with('customer')
-                    ->orderBy('quantity', 'asc')
-                    ->paginate(Utility::PAGINATE_COUNT);
 
-        return view('admin.wallets.addons', compact('wallets'));
+    public function addon_wallets(Request $request)
+    {
+        // $wallets = AddonWallet::with('customer')
+        //             ->orderBy('quantity', 'asc')
+        //             ->paginate(Utility::PAGINATE_COUNT);
+
+        $query = AddonWallet::with('customer');
+
+        $selectedCustomerId = null;
+
+        if ($request->filled('customer_id')) {
+            try {
+                $selectedCustomerId = decrypt($request->customer_id);
+                $query->where('customer_id', $selectedCustomerId);
+            } catch (\Exception $e) {
+                // optional: flash error or ignore
+            }
+        }
+
+        // $wallets = AddonWallet::with('customer')
+        //             ->orderBy('quantity', 'asc')
+        //             ->paginate(Utility::PAGINATE_COUNT);
+        $wallets = $query->orderBy('quantity', 'asc')->paginate(Utility::PAGINATE_COUNT);
+
+        $customers = Customer::orderBy('name')->get(['id', 'name', 'phone']);
+
+        return view('admin.wallets.addons', compact('wallets', 'customers', 'selectedCustomerId'));
     }
 
     public function toggleWalletStatus($encryptedId)
     {
         $id = decrypt($encryptedId);
         $wallet = MealWallet::findOrFail($id);
+        $customerId = $wallet->customer->id;
+        // $suspended_wallet = MealWallet::where('customer_id', $customerId)
+        //         ->where('status',Utility::ITEM_INACTIVE)->where('is_on', Utility::ITEM_ACTIVE)->first();
+        // if($suspended_wallet && !$wallet->status) {
+        //     $wallet->is_on = Utility::ITEM_ACTIVE;
+        //     return 'hi';
+        // }
         $wallet->status = !$wallet->status;
         $wallet->save();
+
+        if (($wallet->wallet_group_id!=Utility::WALLET_GROUP_MEAL) && ($wallet->is_on)) {
+
+            // Deactivate current wallet
+            $wallet->update(['is_on' => 0]);
+
+            // Make meal wallet default
+            MealWallet::where('customer_id', $customerId)
+                ->where('wallet_group_id', Utility::WALLET_GROUP_MEAL)
+                ->update(['is_on' => 1]);
+        }
 
         return redirect()->back()->with('success', 'Wallet status updated successfully.');
     }

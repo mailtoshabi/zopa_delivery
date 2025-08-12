@@ -960,6 +960,6 @@
 
 <!-- dashboard init -->
 <script src="{{ URL::asset('/assets/js/pages/dashboard.init.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 @endsection
 

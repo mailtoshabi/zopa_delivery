@@ -64,7 +64,6 @@
     <!-- JAVASCRIPT -->
     @include('admin.layouts.vendor-scripts')
 </body>
-<script>
-
-</script>
+<script src="{{ URL::asset('/assets/js/app.min.js') }}" ></script>
 </html>
+php

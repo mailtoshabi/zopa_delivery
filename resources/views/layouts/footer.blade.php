@@ -4,13 +4,14 @@
             <div class="row">
                 <div class="col-md-12">
                     <ul class="list-inline mb-2">
-                        <li class="list-inline-item"><a href="{{ route('about_us') }}">About Us</a></li>
-                        <li class="list-inline-item"><a href="{{ route('how_to_use') }}">How to Use</a></li>
-                        <li class="list-inline-item"><a href="{{ route('payment_terms') }}">Payment Terms</a></li>
-                        <li class="list-inline-item"><a href="{{ route('privacy_policy') }}">Privacy Policy</a></li>
-                        <li class="list-inline-item"><a href="{{ route('support') }}">Support</a></li>
-                        <li class="list-inline-item"><a href="{{ route('faq') }}">FAQ</a></li>
-                        <li class="list-inline-item"><a href="{{ route('site_map') }}">Site Map</a></li>
+                        <li class="list-inline-item"><a href="{{ route('about_us') }}">{{ __('messages.menu.about') }}</a></li>
+                        <li class="list-inline-item"><a href="{{ route('how_to_use') }}">{{ __('messages.menu.how_to_use') }}</a></li>
+                        {{-- <li class="list-inline-item"><a href="{{ route('feedbacks') }}">{{ __('messages.menu.feedbacks') }}</a></li> --}}
+                        <li class="list-inline-item"><a href="{{ route('payment_terms') }}">{{ __('messages.menu.payment_terms') }}</a></li>
+                        <li class="list-inline-item"><a href="{{ route('privacy_policy') }}">{{ __('messages.menu.privacy') }}</a></li>
+                        <li class="list-inline-item"><a href="{{ route('support') }}">{{ __('messages.menu.support') }}</a></li>
+                        <li class="list-inline-item"><a href="{{ route('faq') }}">{{ __('messages.menu.faq') }}</a></li>
+                        <li class="list-inline-item"><a href="{{ route('site_map') }}">{{ __('messages.menu.site_map') }}</a></li>
                         <!-- Zopa Footer Install Link -->
                         <li><a href="#" id="footerInstallLink" style="display:none;">Install Zopa App</a></li>
                     </ul>
@@ -18,18 +19,13 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <p class="mb-0 d-md-inline">All rights reserved Zopa Food Drop</p>
+                    <p class="mb-0 d-md-inline">All rights reserved @appName</p>
                     <span class="d-none d-md-inline"> | </span>
                     <p class="mb-0 d-md-inline">Powered by <a href="https://webmahal.com" target="_blank" class="powered" >Web Mahal</a></p>
                 </div>
             </div>
         </div>
     </footer>
-
-    @php
-        use App\Http\Utilities\Utility;
-        $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME);
-    @endphp
 
     <!-- Required JS -->
     <script src="{{ asset('front/js/jquery-3.6.0.min.js') }}" crossorigin="anonymous"></script>
@@ -192,7 +188,7 @@
 
     // Handle footer install click
     footerInstallLink.addEventListener('click', (e) => {
-    e.preventDefault();
+e.preventDefault();
     if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
@@ -259,13 +255,13 @@
 </style>
 
 <div class="mobile-footer-shortcuts d-md-none">
-    <a href="{{ route('customer.daily_meals') }}" target="_blank">
+    <a href="{{ route('customer.daily_meals') }}">
         <i class="fa-solid fa-utensils" style="color: #696969;"></i>
-        Orders
+        Meals
     </a>
     <a href="{{ route('front.meal.plan') }}">
         <i class="fa-solid fa-concierge-bell text-danger"></i>
-        Meals
+        Plans
     </a>
     <a href="{{ route('front.show.addons') }}">
         <i class="fa-solid fa-plus-circle text-warning"></i>

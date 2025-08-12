@@ -31,7 +31,7 @@
                                 </div>
                             </div>
                             <div class="col-md-6 text-end">
-                                <a href="{{ route('admin.remarks.create') }}" class="btn btn-primary btn-sm"><i class="mdi mdi-plus"></i> Add Remark</a>
+                                <a href="{{ route('admin.remarks.create') }}" class="btn btn-primary btn-sm"><i class="mdi mdi-plus"></i> @lang('translation.Add_Remark')</a>
                             </div>
                         </div>
 
@@ -101,6 +101,6 @@
 <script src="{{ URL::asset('assets/libs/datatables.net/datatables.net.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script src="{{ URL::asset('assets/js/pages/datatable-pages.init.js') }}"></script>
 @endsection

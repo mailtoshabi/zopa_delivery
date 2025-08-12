@@ -20,10 +20,10 @@
     <div class="col-lg-12">
     <ul class="nav nav-tabs">
         <li class="nav-item">
-          <a class="nav-link @if($is_active==Utility::ITEM_INACTIVE) active @endif" @if($is_active==Utility::ITEM_INACTIVE)aria-current="page"@endif href="{{ route('admin.orders.index','status='.encrypt(Utility::ITEM_INACTIVE)) }}">Pending <span class="badge rounded-pill bg-soft-danger text-danger float-end">{{ $count_new }}</span></a>
+          <a class="nav-link @if($is_active==Utility::ITEM_INACTIVE) active @endif" @if($is_active==Utility::ITEM_INACTIVE)aria-current="page"@endif href="{{ route('admin.orders.index','status='.encrypt(Utility::ITEM_INACTIVE)) }}">Pending to add Wallet <span class="badge rounded-pill bg-soft-danger text-danger float-end">{{ $count_new }}</span></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link @if($is_active==Utility::ITEM_ACTIVE) active @endif" @if($is_active==Utility::ITEM_ACTIVE)aria-current="page"@endif href="{{ route('admin.orders.index','status='.encrypt(Utility::ITEM_ACTIVE)) }}">Activated</a>
+          <a class="nav-link @if($is_active==Utility::ITEM_ACTIVE) active @endif" @if($is_active==Utility::ITEM_ACTIVE)aria-current="page"@endif href="{{ route('admin.orders.index','status='.encrypt(Utility::ITEM_ACTIVE)) }}">Added to Wallet</a>
         </li>
         <li class="nav-item">
             <a class="nav-link text-danger @if($is_active==Utility::STATUS_NOTPAID) active @endif" @if($is_active==Utility::STATUS_NOTPAID)aria-current="page"@endif href="{{ route('admin.orders.index','status='.encrypt(Utility::STATUS_NOTPAID)) }}">UnPaid <span class="badge rounded-pill bg-soft-danger text-danger float-end">{{ $count_not_paid }}</span></a>
@@ -104,6 +104,9 @@
                                                 ₹{{ number_format($grandTotal, 2) }}
                                             </td>
                                             <td>
+                                                <span class="badge bg-{{ ($customer_order->pay_method == Utility::PAYMENT_ONLINE) ? 'primary' : 'secondary' }}">
+                                                    {{ $customer_order->is_paid ? 'online' : 'COD' }}
+                                                </span>
                                                 <span class="badge bg-{{ $customer_order->is_paid ? 'success' : 'danger' }}">
                                                     {{ $customer_order->is_paid ? 'Paid' : 'Not Paid' }}
                                                 </span>
@@ -126,8 +129,14 @@
                                                         <ul class="dropdown-menu dropdown-menu-end">
                                                             @if($customer_order->status == Utility::ITEM_INACTIVE)
                                                                 <li>
-                                                                <a onclick="return confirm('Are you sure to Activate & Mark as Paid?')" class="dropdown-item" href="{{ route('admin.orders.activate',encrypt($customer_order->id))}}">
-                                                                    <i class="fa fa-eye font-size-16 text-success me-1"></i> Activate
+                                                                <a onclick="return confirm('Are you sure to Activate & Mark as Paid?')" class="dropdown-item" href="{{ route('admin.orders.activate', [encrypt($customer_order->id), 'paid']) }}">
+                                                                    <i class="fas fa-credit-card font-size-16 text-success me-1"></i> Activate With Payment
+                                                                </a>
+                                                                </li>
+
+                                                                <li>
+                                                                <a onclick="return confirm('Are you sure to Activate without Payment?')" class="dropdown-item" href="{{ route('admin.orders.activate', [encrypt($customer_order->id), 'unpaid']) }}">
+                                                                    <i class="fas fa-toggle-on font-size-16 text-success me-1"></i> Activate Without Payment
                                                                 </a>
                                                                 </li>
                                                             @endif
@@ -156,6 +165,6 @@
 <script src="{{ URL::asset('assets/libs/datatables.net/datatables.net.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 <script src="{{ URL::asset('assets/js/pages/datatable-pages.init.js') }}"></script>
 @endsection

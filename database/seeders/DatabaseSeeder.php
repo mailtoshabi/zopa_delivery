@@ -52,9 +52,14 @@ class DatabaseSeeder extends Seeder
         $user3=User::create(['name' => 'Shada Mariyam','email' => 'shada@gmail.com','phone'=>'9809373737','password' => Hash::make('123456'),'email_verified_at'=>now(),'avatar' => 'avatar-1.jpg','created_at' => now()]);
         $user3->assignRole('Manager');
 
-        Kitchen::create(['name'=>'Kondotty','phone'=>'9809373738', 'whatsapp'=>'9809373738','city'=>'Kondotty','district_id'=>Utility::DISTRICT_ID_MPM,'state_id'=>Utility::STATE_ID_KERALA, 'created_at' => now(), 'user_id' => Utility::SUPER_ADMIN_ID]);
+        Kitchen::create(['name'=>'Marakkar House', 'display_name'=>'Kondotty', 'phone'=>'9809373738', 'whatsapp'=>'9809373738','city'=>'Kondotty','district_id'=>Utility::DISTRICT_ID_MPM,'state_id'=>Utility::STATE_ID_KERALA, 'postal_code'=>'673638', 'latitude'=>'11.1460874', 'longitude'=>'75.9634976', 'location_name'=>'Kondotty, Kerala 673638, India', 'delivery_distance'=>'5', 'email'=>'kondotty@zopa.in', 'password'=>Hash::make('123456'), 'created_at' => now(), 'status'=>1, 'is_approved'=>1, 'approved_at'=>now(), 'user_id' => Utility::SUPER_ADMIN_ID]);
+        Kitchen::create(['name'=>'Kerala Health Mart', 'display_name'=>'Manjeri', 'phone'=>'9847638678', 'whatsapp'=>'9847638678','city'=>'Manjeri','district_id'=>Utility::DISTRICT_ID_MPM,'state_id'=>Utility::STATE_ID_KERALA, 'postal_code'=>'678956', 'latitude'=>'11.1197497', 'longitude'=>'76.1230190', 'location_name'=>'449F+V6R, Pandikkad Road, Vellarangal, Manjeri, Kerala 676121, India', 'delivery_distance'=>'5', 'email'=>'manjeri@zopa.in', 'password'=>Hash::make('123456'), 'created_at' => now(), 'status'=>1, 'is_approved'=>1, 'approved_at'=>now(), 'user_id' => Utility::SUPER_ADMIN_ID]);
 
         $this->call([
+            CustomerSeeder::class,
+            CategorySeeder::class,
+            MessCategorySeeder::class,
+            WalletGroupSeeder::class,
             MealSeeder::class,
             IngredientSeeder::class,
             RemarkSeeder::class,

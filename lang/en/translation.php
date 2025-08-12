@@ -231,23 +231,33 @@ return [
     "Edit_Category" => "Edit Category",
     "Category_List" => "Category List",
 
+    "MessCategory_Manage" => "Mess Categories",
+    "Add_MessCategory" => "Add Mess Category",
+    "Edit_MessCategory" => "Edit Mess Category",
+    "MessCategory_List" => "Mess Category List",
+
+    "Wallet_Group_Manage" => "Wallet Groups",
+    "Add_Wallet_Group" => "Add Wallet Group",
+    "Edit_Wallet_Group" => "Edit Wallet Group",
+    "Wallet_Group_List" => "Wallet Group List",
+
     "Add_Ingredient" => "Add Ingredient",
-    "Ingredient_List" => "Ingredients",
+    "Ingredient_List" => "Ingredient List",
     "Ingredient" => "Ingredient",
 
-    "Add_Remark" => "Add Remark",
-    "Remark_List" => "Remarks",
-    "Remark" => "Remark",
+    "Add_Remark" => "Add Speciality",
+    "Remark_List" => "Specialities",
+    "Remark" => "Speciality",
 
     "Product_Manage" => "Products",
     "Add_Product" => "Add Product",
     "Edit_Product" => "Edit Product",
     "Product_List" => "Product List",
 
-    "Meal_Manage" => "Meals",
-    "Add_Meal" => "Add Meal",
-    "Edit_Meal" => "Edit Meal",
-    "Meal_List" => "Meal List",
+    "Meal_Manage" => "Foods",
+    "Add_Meal" => "Add Food",
+    "Edit_Meal" => "Edit Food",
+    "Meal_List" => "Food List",
     "Meal_Wallet" => "Meal Wallet",
 
     "Addon_Manage" => "Addons",
@@ -313,4 +323,5 @@ return [
     "Extra_orders" => "Extra Meals",
     "Meal_List" => "Meal List",
     "Purchases" => "Customer Orders",
+
 ];

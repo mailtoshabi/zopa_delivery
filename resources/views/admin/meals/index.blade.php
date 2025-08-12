@@ -54,7 +54,16 @@
                                     <tr>
                                         <td>
                                             <a href="{{ route('admin.meals.edit', encrypt($meal->id)) }}">
-                                                {{ $meal->name }}
+                                                {{ $meal->name }}<br>
+                                                @isset($meal->category)
+                                                    <small>Category: {{ $meal->category->name }}</small><br>
+                                                @endisset
+                                                @isset($meal->mess_category)
+                                                    <small>Mess Category: {{ $meal->mess_category->name }}</small>
+                                                @endisset
+                                                @isset($meal->walletGroup)
+                                                    <small>Wallet Group: {{ $meal->walletGroup->name }}</small>
+                                                @endisset
                                             </a>
                                         </td>
                                         <td>₹{{ $meal->price }}</td>
@@ -95,7 +104,11 @@
                                                         @method('DELETE')
                                                     </form>
                                                     <li>
-                                                        <a class="dropdown-item" href="{{ route('admin.meals.changeStatus', encrypt($meal->id)) }}">
+                                                        @php
+                                                            $stat_msg = $meal->status ? 'Unpublish':'Publish';
+                                                            // return confirm('Are you sure to '. $stat_msg . '?')
+                                                        @endphp
+                                                        <a onclick="return confirm('Are you sure to {{ $stat_msg }} the Food?')" class="dropdown-item" href="{{ route('admin.meals.changeStatus', encrypt($meal->id)) }}">
                                                             {!! $meal->status ? '<i class="fas fa-power-off font-size-16 text-danger me-1"></i> Unpublish' : '<i class="fas fa-circle-notch font-size-16 text-primary me-1"></i> Publish' !!}
                                                         </a>
                                                     </li>
@@ -124,6 +137,6 @@
 <script src="{{ URL::asset('assets/libs/datatables.net/datatables.net.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js') }}"></script>
-<script src="{{ URL::asset('assets/js/app.min.js') }}"></script>
+
 <script src="{{ URL::asset('assets/js/pages/datatable-pages.init.js') }}"></script>
 @endsection

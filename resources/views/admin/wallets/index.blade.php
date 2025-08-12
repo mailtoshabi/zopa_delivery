@@ -3,6 +3,7 @@
 @section('css')
 <link href="{{ URL::asset('/assets/libs/datatables.net-bs4/datatables.net-bs4.min.css') }}" rel="stylesheet">
 <link href="{{ URL::asset('assets/libs/datatables.net-responsive-bs4/datatables.net-responsive-bs4.min.css') }}" rel="stylesheet" />
+<link href="{{ URL::asset('assets/libs/select2/select2.min.css') }}" rel="stylesheet">
 @endsection
 
 @section('content')
@@ -36,13 +37,39 @@
                                 <button id="bulk-status-toggle" class="btn btn-outline-primary">Toggle Status (Selected)</button>
                             </div>
 
+                            <!-- Filter Form Start -->
+                            <form method="GET" class="row mb-3" id="customer-filter-form" autocomplete="off">
+                                <div class="col-md-4">
+                                    <select name="customer_id" class="form-select" onchange="document.getElementById('customer-filter-form').submit();">
+                                        <option value="">All Customers</option>
+                                        @foreach($customers as $customer)
+                                            {{-- <option value="{{ encrypt($customer->id) }}" {{ decrypt(request('customer_id')) == $customer->id ? 'selected' : '' }}>
+                                                {{ $customer->name }} ({{ $customer->phone }})
+                                            </option> --}}
+                                            <option value="{{ encrypt($customer->id) }}" {{ $selectedCustomerId == $customer->id ? 'selected' : '' }}>
+                                                {{ $customer->name }} ({{ $customer->phone }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-primary">
+                                        Filter
+                                    </button>
+                                    <a href="{{ route('admin.customers.wallets') }}" class="btn btn-link">Reset</a>
+                                </div>
+                            </form>
+                            <!-- Filter Form End -->
+
+
+
                             <table class="table align-middle dt-responsive table-check nowrap" style="width: 100%;">
                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" id="select-all"></th>
                                         <th>Customer</th>
                                         <th>Phone</th>
-                                        <th>Wallet Quantity</th>
+                                        <th>Wallet</th>
                                         <th>Status</th>
                                         <th>Updated At</th>
                                         <th>Action</th>
@@ -54,8 +81,11 @@
                                         <td><input type="checkbox" class="wallet-checkbox" value="{{ $wallet->id }}"></td>
                                         <td>{{ $wallet->customer->name ?? '-' }}</td>
                                         <td>{{ $wallet->customer->phone ?? '-' }}</td>
-                                        <td><strong>{{ $wallet->quantity }}</strong></td>
-                                        <td>{!! $wallet->status ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Suspended</span>' !!}</td>
+                                        <td>{{ $wallet->walletGroup->name }}- {{ $wallet->quantity }} No(s)</td>
+                                        <td>
+                                            {!! $wallet->is_on ? '<span class="badge bg-secondary">Default</span>' : '' !!}
+                                            {!! $wallet->status ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Suspended</span>' !!}
+                                        </td>
                                         <td>{{ $wallet->updated_at->format('d M Y, h:i A') }}</td>
                                         <td>
                                             <div class="dropdown">
@@ -78,7 +108,7 @@
                                 </tbody>
                             </table>
                             <div class="pagination justify-content-center mt-3">
-                                {{ $wallets->links() }}
+                                {{ $wallets->appends(request()->query())->links() }}
                             </div>
                         </div>
 
@@ -94,7 +124,7 @@
 <script src="{{ URL::asset('assets/libs/datatables.net/datatables.net.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-bs4/datatables.net-bs4.min.js') }}"></script>
 <script src="{{ URL::asset('assets/libs/datatables.net-responsive/datatables.net-responsive.min.js') }}"></script>
-<script src="{{ URL::asset('assets/js/app.min.js') }}"></script>
+
 <script src="{{ URL::asset('assets/js/pages/datatable-pages.init.js') }}"></script>
 
 <script>
@@ -131,4 +161,15 @@ document.getElementById('bulk-status-toggle').addEventListener('click', function
     });
 });
 </script>
+
+<script src="{{ URL::asset('assets/libs/select2/select2.min.js') }}"></script>
+<script>
+   $(document).ready(function() {
+      $('select[name="customer_id"]').select2({
+         placeholder: "Select a customer",
+         allowClear: true
+      });
+   });
+</script>
+
 @endsection

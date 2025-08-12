@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreign('state_id')->references('id')->on('states')->cascadeOnDelete();
             $table->string('postal_code')->nullable();
             $table->string('image_filename', 255)->nullable();
-            $table->boolean('status')->comment('1-Active 0-Inactive')->default(1);
+            $table->boolean('status')->comment('1-Active 0-Inactive')->default(0);
             $table->foreignId('user_id')->nullable()->index()->constrained()->onDelete('cascade');
             $table->timestamps();
         });

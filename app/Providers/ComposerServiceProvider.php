@@ -8,6 +8,7 @@ use App\Models\AllSlug;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\ClinicType;
+use App\Models\Kitchen;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\User;
@@ -39,6 +40,11 @@ class ComposerServiceProvider extends ServiceProvider
             $user = User::find(Auth::id());
             $view->with(compact('user'));
         });
+
+        // view()->composer(['kitchen.layouts.sidebar'], function ($view) {
+        //     $user = Kitchen::find(Auth::id());
+        //     $view->with(compact('user'));
+        // });
 
         // view()->composer(['admin.layouts.master'], function ($view) {
         //     $mainbranches = Branch::where('status',Utility::ITEM_ACTIVE)->get();

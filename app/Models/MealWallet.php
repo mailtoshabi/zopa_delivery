@@ -13,8 +13,15 @@ class MealWallet extends Model
 
     protected $fillable = [
         'customer_id',
+        'wallet_group_id',
         'quantity',
         'status',
+        'is_on',
+    ];
+
+    protected $casts = [
+        'status' => 'boolean',
+        'is_on' => 'boolean',
     ];
 
     /**
@@ -23,5 +30,10 @@ class MealWallet extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function walletGroup()
+    {
+        return $this->belongsTo(WalletGroup::class, 'wallet_group_id');
     }
 }

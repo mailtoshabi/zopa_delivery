@@ -18,6 +18,15 @@ a.btn-close {
     color: red;
 }
 
+button.btn-close {
+    background: none;
+    cursor: pointer;
+    color: rgb(243, 18, 18) !important;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 1;
+}
+
 .select2-container {
     width: 100% !important;
 }

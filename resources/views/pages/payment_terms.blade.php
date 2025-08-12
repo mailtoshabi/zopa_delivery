@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Payment Terms - Zopa Food Drop')
+@section('title', 'Payment Terms - ' . config('app.name'))
 
 @section('content')
 <div class="container mt-5">
@@ -11,7 +11,7 @@
 
     <section class="mt-4">
         <h3 data-pm-slice="1 1 []">1. Payment Methods</h3>
-        <p>Zopa Food Drop offers multiple payment options for your convenience. You can make payments using:</p>
+        <p>@appName offers multiple payment options for your convenience. You can make payments using:</p>
         <ul data-spread="false">
         <li>
         <p>Credit/Debit Cards (Visa, MasterCard, RuPay, etc.)</p>
@@ -86,7 +86,7 @@
         </li>
         </ul>
         <h3>6. Changes to Payment Terms</h3>
-        <p>Zopa Food Drop reserves the right to modify payment terms at any time. Any changes will be updated on this page and communicated to customers where applicable.</p>
+        <p>@appName reserves the right to modify payment terms at any time. Any changes will be updated on this page and communicated to customers where applicable.</p>
         <p>For any payment-related queries, please contact our support team at <a><strong>{{ Utility::SUPPORT_MAIL }}</strong></a>.</p>
     </section>
 

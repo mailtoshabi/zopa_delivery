@@ -30,13 +30,13 @@ class RegisterController extends Controller
     }
 
     public function showRegistrationForm()
-{
-    $kitchens = Kitchen::select('id', 'name')->get();
-    $states = DB::table('states')->orderBy('name', 'asc')->select('id', 'name')->get();
-    $firebaseConfig = config('services.firebase');
+    {
+        $kitchens = Kitchen::select('id', 'name')->get();
+        $states = DB::table('states')->orderBy('name', 'asc')->select('id', 'name')->get();
+        $firebaseConfig = config('services.firebase');
 
-    return view('pages.register', compact('kitchens', 'states', 'firebaseConfig'));
-}
+        return view('pages.register', compact('kitchens', 'states', 'firebaseConfig'));
+    }
 
 
     /**
@@ -66,6 +66,9 @@ class RegisterController extends Controller
             // 'kitchen_id'   => 'required',
             // 'city'         => 'required',
             // 'postal_code'  => 'required',
+            // 'latitude'         => 'required',
+            // 'longitude'         => 'required',
+            // 'location_name'         => 'required',
         ];
 
         $messages = [
@@ -88,21 +91,26 @@ class RegisterController extends Controller
         // $expiresAt = now()->addMinutes(Utility::OTP_EXPIRY_MINUTE);
 
         $whatsApp = $request->has('has_whatsapp') ? $request->phone : '';
+        $postal_code = get_postal_code($request->latitude, $request->longitude);
 
         $customer = Customer::create([
             'name' => $request->name,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             // 'office_name' => $request->office_name,
-            // 'city' => $request->city,
+            'city' => $request->location_name,
             // 'landmark' => $request->landmark,
             // 'designation' => $request->designation,
             'whatsapp' => $whatsApp,
             'district_id' => Utility::DISTRICT_ID_MPM,
             'state_id' => Utility::STATE_ID_KERALA,
-            'postal_code' => $request->postal_code,
-            // 'kitchen_id' => decrypt($request->kitchen_id),
-            'kitchen_id' => Utility::KITCHEN_KDY,
+            'postal_code' => $postal_code,
+            'kitchen_id' => decrypt($request->kitchen_id), //Utility::KITCHEN_KDY
+            'customer_type' => Utility::CUSTOMER_TYPE_IND, //$request->input('customer_type'),
+            'daily_quantity' => $request->input('customer_type') === Utility::CUSTOMER_TYPE_INST ? $request->input('daily_quantity') : null,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'location_name' => $request->location_name,
             'status' => Utility::ITEM_ACTIVE,
             'is_approved' => 1,
             'firebase_uid' => $request->firebase_uid,

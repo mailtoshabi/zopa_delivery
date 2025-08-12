@@ -48,5 +48,5 @@
 
 @section('script')
 <script src="{{ URL::asset('assets/libs/select2/select2.min.js') }}"></script>
-<script src="{{ URL::asset('/assets/js/app.min.js') }}"></script>
+
 @endsection

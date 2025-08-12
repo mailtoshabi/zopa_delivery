@@ -6,7 +6,8 @@ use App\Http\Utilities\Utility;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class Addon extends Model
 {
@@ -50,6 +51,38 @@ class Addon extends Model
         return $this->belongsToMany(Customer::class, 'customer_addon')
                     ->withPivot('invoice_no','price','quantity','pay_method','is_paid','status')
                     ->withTimestamps();
+    }
+
+    public function kitchens()
+    {
+        return $this->belongsToMany(Kitchen::class, 'kitchen_addon')
+                    ->withPivot('price', 'image_filename', 'status')
+                    ->withTimestamps();
+    }
+
+    public static function withKitchenOverrides($addonId = null)
+    {
+        $customer = Auth::guard('customer')->user();
+
+        $query = self::query()
+            ->select([
+                'addons.*',
+                DB::raw("COALESCE(kitchen_addon.price, addons.price) AS price"),
+                DB::raw("COALESCE(kitchen_addon.status, addons.status) AS status"),
+                DB::raw("COALESCE(kitchen_addon.image_filename, addons.image_filename) AS image_filename"),
+            ])
+            ->leftJoin('kitchen_addon', function ($join) use ($customer) {
+                $join->on('addons.id', '=', 'kitchen_addon.addon_id')
+                    ->where('kitchen_addon.kitchen_id', '=', $customer->kitchen_id);
+            });
+
+        if ($addonId) {
+            $query->where('addons.id', $addonId);
+        }
+        // ✅ Only return if effective status = active
+        $query->having('status', '=', Utility::ITEM_ACTIVE);
+
+        return $query;
     }
 
     public function deleteImage(): void

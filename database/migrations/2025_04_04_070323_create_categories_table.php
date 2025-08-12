@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+ * Run the migrations.
      */
     public function up(): void
     {
@@ -17,12 +17,13 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->string('name',255);
             $table->string('image')->nullable();
+            $table->text('slug');
             $table->boolean('status')->comment('1-Active 0-Inactive')->default(1);
             $table->foreignId('user_id');
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->timestamps();
         });
-        
+
     }
 
     /**

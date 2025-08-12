@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Payment Information - Zopa Food Drop')
+@section('title', 'Payment Information - ' . config('app.name'))
 
 @section('content')
 <div class="container my-2">
@@ -13,12 +13,12 @@
         <div class="col-md-8 mb-4">
             <div class="card shadow">
                 <div class="card-body">
-                    <p class="text-success"><strong>Thank you!</strong> Your Meals order has been placed.</p>
+                    <p class="text-success"><strong>Thank you!</strong> Your Order has been placed.</p>
 
                     @if($payment_method == Utility::PAYMENT_ONLINE)
                         <h4 class="mb-3 text-primary">Online Payment Details</h4>
                         <div class="alert alert-success">
-                            Payment successful. Your meal plan has been activated, and the meals and addons have been credited to <a href="{{ route('my.wallet') }}"> Wallet</a>.
+                            Payment successful. Your order has been activated and credited to your <a href="{{ route('my.wallet') }}"> Wallet</a>.
                         </div>
                     @elseif($payment_method == Utility::PAYMENT_BNK)
                         <h4 class="mb-3 text-success">Online Payment Details</h4>
