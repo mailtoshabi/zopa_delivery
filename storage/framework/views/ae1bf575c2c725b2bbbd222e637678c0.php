@@ -35,8 +35,16 @@
     <?php echo $__env->make('partials.why_choose_us', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     <?php endif; ?>
 </div>
+<?php
+    use App\Http\Utilities\Utility;
 
-<?php echo $__env->make('partials.how_to_use_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    if(auth('customer')->check()) {
+        $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(auth('customer')->user()->cutoff_time); // From accessor
+    } else {
+        $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME);
+    }
+    ?>
+<?php echo $__env->make('partials.how_to_use_modal', ['lastOrderTime' => $lastOrderTime], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>

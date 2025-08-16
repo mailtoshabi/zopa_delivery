@@ -35,8 +35,16 @@
     @include('partials.why_choose_us')
     @endif
 </div>
+@php
+    use App\Http\Utilities\Utility;
 
-@include('partials.how_to_use_modal')
+    if(auth('customer')->check()) {
+        $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(auth('customer')->user()->cutoff_time); // From accessor
+    } else {
+        $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME);
+    }
+    @endphp
+@include('partials.how_to_use_modal', ['lastOrderTime' => $lastOrderTime])
 @endsection
 
 @push('scripts')

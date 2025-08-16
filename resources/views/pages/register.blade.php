@@ -355,12 +355,12 @@
             });
 
             // Validate password: min 8, one uppercase, one lowercase, one digit, one special char
-            const passwordInput = form.find('[name="password"]');
-            const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-            if (!passwordPattern.test(passwordInput.val())) {
-                passwordInput.addClass("invalid");
-                isValid = false;
-            }
+            // const passwordInput = form.find('[name="password"]');
+            // const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            // if (!passwordPattern.test(passwordInput.val())) {
+            //     passwordInput.addClass("invalid");
+            //     isValid = false;
+            // }
 
             // ✅ Validate daily_quantity only if customer_type is institution
             let customerType = form.find('[name="customer_type"]').val();

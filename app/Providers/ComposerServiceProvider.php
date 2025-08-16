@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Helpers\FileHelper;
 use App\Http\Utilities\Utility;
 use App\Models\Affiliate;
 use App\Models\AllSlug;
@@ -50,6 +51,16 @@ class ComposerServiceProvider extends ServiceProvider
         //     $mainbranches = Branch::where('status',Utility::ITEM_ACTIVE)->get();
         //     $view->with(compact('mainbranches'));
         // });
+
+        view()->composer('*', function ($view) {
+            if (auth('customer')->check()) {
+                $lastOrderTime = FileHelper::convertTo12Hour(auth('customer')->user()->cutoff_time);
+            } else {
+                $lastOrderTime = FileHelper::convertTo12Hour(Utility::CUTOFF_TIME);
+            }
+
+            $view->with('lastOrderTime', $lastOrderTime);
+        });
 
     }
 

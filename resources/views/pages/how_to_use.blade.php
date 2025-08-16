@@ -13,7 +13,7 @@
     </div>
 
     <div class="row">
-        @include('partials.how_to_use_content')
+        @include('partials.how_to_use_content', ['lastOrderTime' => $lastOrderTime])
     </div>
 </div>
 @endsection

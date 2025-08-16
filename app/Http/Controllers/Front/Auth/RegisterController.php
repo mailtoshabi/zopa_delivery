@@ -51,11 +51,11 @@ class RegisterController extends Controller
                 'unique:customers,phone',
                 'regex:/^[6-9]\d{9}$/',
             ],
-            'password'     => [
-                'required',
-                'min:8',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
-            ],
+            // 'password'     => [
+            //     'required',
+            //     'min:8',
+            //     'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
+            // ],
             'has_whatsapp' => 'nullable|boolean',
             // 'office_name'  => 'required',
             // 'whatsapp'     => [
@@ -74,7 +74,7 @@ class RegisterController extends Controller
         $messages = [
             'phone.regex' => 'The phone number must be a valid 10-digit Indian mobile number.',
             // 'whatsapp.regex' => 'The WhatsApp number must be a valid 10-digit Indian mobile number.',
-            'password.regex' => 'Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.',
+            // 'password.regex' => 'Password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one number, and one special character.',
             'password.min' => 'Password must be at least 8 characters long.',
         ];
 

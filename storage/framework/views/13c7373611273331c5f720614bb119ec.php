@@ -162,16 +162,6 @@
         }
     </style>
     <?php echo $__env->yieldPushContent('style'); ?>
-
-        <?php
-            use App\Http\Utilities\Utility;
-
-            if(auth('customer')->check()) {
-                $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(auth('customer')->user()->cutoff_time); // From accessor
-            } else {
-                $lastOrderTime = App\Helpers\FileHelper::convertTo12Hour(Utility::CUTOFF_TIME);
-            }
-        ?>
 </head>
 <body class="d-flex flex-column min-vh-100 locale-<?php echo e(app()->getLocale()); ?>">
     <div id="loading-overlay" style="display: none;">

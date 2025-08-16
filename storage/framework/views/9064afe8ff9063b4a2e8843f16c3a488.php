@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', config('app.name'))</title>
+    <title><?php echo $__env->yieldContent('title', config('app.name')); ?></title>
     <meta name="title" content="Daily Tiffin & Meal Delivery Service in Kerala | Zopa Food Drop">
     <meta name="description" content="Zopa offers fresh, home-style meals delivered daily across Kerala. Subscribe for daily tiffin service, choose your meals, and enjoy hassle-free food delivery.">
 
@@ -23,36 +23,36 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://zopa.in/">
 
-    <link href="{{ asset('front/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('front/css/global.css') }}" rel="stylesheet">
-    {{-- <link rel="stylesheet" href="{{ asset('front/font-awesome/css/all-6.0.0.min.css') }}"> --}}
+    <link href="<?php echo e(asset('front/css/bootstrap.min.css')); ?>" rel="stylesheet">
+    <link href="<?php echo e(asset('front/css/global.css')); ?>" rel="stylesheet">
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    @if(app()->getLocale() === 'ml')
+    <?php if(app()->getLocale() === 'ml'): ?>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam&display=swap" rel="stylesheet">
-    @else
+    <?php else: ?>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-    @endif
+    <?php endif; ?>
 
     <!-- Standard favicon -->
-    <link rel="icon" href="{{ asset('favicon/favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="<?php echo e(asset('favicon/favicon.ico')); ?>" type="image/x-icon">
 
     <!-- For modern browsers -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?php echo e(asset('favicon/favicon-32x32.png')); ?>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?php echo e(asset('favicon/favicon-16x16.png')); ?>">
 
     <!-- Apple Touch Icon (iPhone/iPad) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo e(asset('favicon/apple-touch-icon.png')); ?>">
 
     <!-- Android Chrome Icons -->
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('favicon/android-chrome-192x192.png') }}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('favicon/android-chrome-512x512.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?php echo e(asset('favicon/android-chrome-192x192.png')); ?>">
+    <link rel="icon" type="image/png" sizes="512x512" href="<?php echo e(asset('favicon/android-chrome-512x512.png')); ?>">
 
     <!-- Manifest (for Android and PWA) -->
-    <link rel="manifest" href="{{ asset('favicon/site.webmanifest') }}">
+    <link rel="manifest" href="<?php echo e(asset('favicon/site.webmanifest')); ?>">
 
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileColor" content="#ec1d23">
-    <meta name="msapplication-TileImage" content="{{ asset('favicon/android-chrome-192x192.png') }}">
+    <meta name="msapplication-TileImage" content="<?php echo e(asset('favicon/android-chrome-192x192.png')); ?>">
 
     <!-- Theme Color (browser UI) -->
     <meta name="theme-color" content="#ec1d23">
@@ -161,9 +161,9 @@
             100% { transform: rotate(360deg); }
         }
     </style>
-    @stack('style')
+    <?php echo $__env->yieldPushContent('style'); ?>
 </head>
-<body class="d-flex flex-column min-vh-100 locale-{{ app()->getLocale() }}">
+<body class="d-flex flex-column min-vh-100 locale-<?php echo e(app()->getLocale()); ?>">
     <div id="loading-overlay" style="display: none;">
         <div class="loading-spinner"></div>
     </div>
@@ -173,5 +173,6 @@
     <!-- Navigation Bar -->
     <!-- Paste your navigation code here -->
 
-    {{-- @yield('content') --}}
-    @include('includes.nav')
+    
+    <?php echo $__env->make('includes.nav', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php /**PATH C:\xampp\htdocs\zopa_delivery\resources\views/layouts/header.blade.php ENDPATH**/ ?>
